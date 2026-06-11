@@ -1,0 +1,14 @@
+{
+  "scenario_name": "pair_1p5_2p0__noise_05",
+  "base_scenario": "pair_1p5_2p0",
+  "reject_multipliers": [
+    1.5,
+    2.0
+  ],
+  "noise_rate_reject_flip_0_to_1": 0.05,
+  "seed": 2025,
+  "augmented_rows": 23071209,
+  "reject_rows_generated": 15380806,
+  "training_rows_after_dropna": 23071209,
+  "acceptance_ratio_after_augmentation": 0.3666666536634469
+}

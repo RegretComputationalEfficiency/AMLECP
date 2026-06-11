@@ -1,0 +1,13 @@
+# Core (training + serving the beta_simulator)
+numpy>=1.24
+pandas>=2.0
+scikit-learn>=1.3
+joblib>=1.3
+tqdm>=4.65
+
+# Only needed to (re)build the processed dataset from the raw Kaggle CSV
+# via load_data_with_map.py. These are heavy/geo dependencies; skip them if you
+# only use the pre-trained artifacts in beta_sensitivity_outputs/.
+geopandas>=0.14
+osmnx>=1.9
+haversine>=2.8

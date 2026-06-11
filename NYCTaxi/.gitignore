@@ -1,0 +1,63 @@
+# --- macOS junk ---
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+
+# --- Python ---
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.eggs/
+build/
+dist/
+.ipynb_checkpoints/
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# --- Kaggle raw data: NOT redistributable ---
+# Download "New York City Taxi Fare Prediction" train data from Kaggle
+# (see Simulator/README.md). Do not commit it to the repo.
+Simulator/train.csv
+Simulator/train.csv.zip
+Simulator/train.zip
+Simulator/test.csv
+
+# --- Open-Meteo weather: download yourself (see Simulator/README.md) ---
+Simulator/daily_weather_data_2009_2015.csv
+
+# --- NYC TLC taxi zones: download yourself (see Simulator/README.md) ---
+Simulator/taxi_zones.zip
+Simulator/taxi_zones/
+Simulator/taxi_zones.shp
+Simulator/taxi_zones.*
+
+# --- Large generated / processed datasets ---
+Simulator/*Trained_nyc_taxi_data_with_directionality.csv
+Simulator/**/augmented_training_data.csv
+
+# --- NYC TLC test data (December 2014): NOT redistributable ---
+# Download from TLC trip-record page (see 2014_data/README.md).
+2014_data/**/*.parquet
+2014_data/**/*tripdata*.csv
+2014_data/data/*.csv
+2014_data/TestData/*.csv
+2014_data/TestData/Dec/
+2014_data/TestData/*.tmp.csv
+
+# Timestamp de-duplication script — intentionally not distributed (see README)
+2014_data/spread_same_timestamp_pickup_time.py
+
+# PGD_ILQX test results + plot PDFs — not uploaded (keep directory placeholder)
+2014_data/TestData/sim_output/**
+!2014_data/TestData/sim_output/.gitkeep
+
+# --- Local caches ---
+cache/
+
+# --- Editor ---
+.vscode/

@@ -1,0 +1,68 @@
+# macOS
+._*
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.eggs/
+build/
+dist/
+.ipynb_checkpoints/
+.venv/
+venv/
+env/
+ENV/
+
+# Test / coverage / type-check caches
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Editor / IDE
+.vscode/
+.idea/
+*.swp
+
+# --- NYCTaxi: Kaggle raw data (not redistributable) ---
+NYCTaxi/Simulator/train.csv
+NYCTaxi/Simulator/train.csv.zip
+NYCTaxi/Simulator/train.zip
+NYCTaxi/Simulator/test.csv
+
+# --- NYCTaxi: Open-Meteo weather (download locally) ---
+NYCTaxi/Simulator/daily_weather_data_2009_2015.csv
+
+# --- NYCTaxi: NYC TLC taxi zones (download locally) ---
+NYCTaxi/Simulator/taxi_zones.zip
+NYCTaxi/Simulator/taxi_zones/
+NYCTaxi/Simulator/taxi_zones.shp
+NYCTaxi/Simulator/taxi_zones.*
+
+# --- NYCTaxi: large generated / processed datasets ---
+NYCTaxi/Simulator/*Trained_nyc_taxi_data_with_directionality.csv
+NYCTaxi/Simulator/**/augmented_training_data.csv
+
+# --- NYCTaxi: TLC test data (not redistributable) ---
+NYCTaxi/2014_data/**/*.parquet
+NYCTaxi/2014_data/**/*tripdata*.csv
+NYCTaxi/2014_data/data/*.csv
+NYCTaxi/2014_data/TestData/*.csv
+NYCTaxi/2014_data/TestData/Dec/
+NYCTaxi/2014_data/TestData/*.tmp.csv
+
+# Timestamp de-duplication script — intentionally not distributed
+NYCTaxi/2014_data/spread_same_timestamp_pickup_time.py
+
+# PGD_ILQX test results + plot PDFs
+NYCTaxi/2014_data/TestData/sim_output/**
+!NYCTaxi/2014_data/TestData/sim_output/.gitkeep
+
+# --- NYCTaxi: local caches ---
+NYCTaxi/cache/

@@ -1,0 +1,2 @@
+scenario_name,base_scenario,reject_multipliers,noise_rate_reject_flip_0_to_1,seed,augmented_rows,reject_rows_generated,training_rows_after_dropna,acceptance_ratio_after_augmentation
+pair_1p5_2p0__noise_20,pair_1p5_2p0,"[1.5, 2.0]",0.2,2025,23071209,15380806,23071209,0.4666666579978535

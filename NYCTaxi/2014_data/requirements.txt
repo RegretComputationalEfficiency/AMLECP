@@ -1,0 +1,15 @@
+# Core experiment (PGD_ILQX.py)
+numpy>=1.24
+pandas>=2.0
+scikit-learn>=1.3
+joblib>=1.3
+tqdm>=4.65
+matplotlib>=3.7
+seaborn>=0.13
+
+# Optional: exact CVX / MOSEK solves in PGD_ILQX.py
+cvxpy>=1.4
+
+# Data preparation (combine_yellow_green_taxi.py)
+geopandas>=0.14
+pyarrow>=14.0
