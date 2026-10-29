@@ -84,7 +84,7 @@ DESIGN = os.environ.get("R2_DESIGN", "base")
 if DESIGN not in DESIGNS:
     raise ValueError("unknown R2_DESIGN {!r}; choose from {}".format(DESIGN, DESIGNS))
 DENSE_SEED = 777
-L4_MEAN_SHIFT = 0.3                  # heavy design only (R1 used 0.05; see revision_notes/caseII_design_proposal.md)
+L4_MEAN_SHIFT = 0.3                  # heavy design only (R1 used 0.05)
 GAMMA0 = 5.0
 if DESIGN == "dense":
     _z = np.random.default_rng(DENSE_SEED).standard_normal(D_FEAT)

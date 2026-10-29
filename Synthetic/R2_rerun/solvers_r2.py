@@ -6,7 +6,7 @@ where the rows of A are a_t = (x_t, -p_t) and y_t is the observed demand, i.e. t
 (unit-variance) Gaussian negative log-likelihood of the linear demand model.  The data
 term is NOT averaged over |I_k|, matching D_k in the paper.
 
-  * AMLE-PGD  : proximal gradient (Algorithm 2, Option B) with the certificate stop
+  * AMLE-PGD  : proximal gradient (Algorithm 2) with the certificate stop
                 ||G^{j+1}||_2 <= eps_k, which verifies Condition 1.
   * AMLE-MOSEK: the same problem solved to optimality by MOSEK (eps_k = 0).
   * ILQX      : Lasso, 0.5 ||y - A v||^2 + lambda_t ||v||_1 (Ban and Keskin 2021).
@@ -24,7 +24,7 @@ import numpy as np
 from scipy.optimize import brentq
 
 # ---------------------------------------------------------------------------
-# Proximal operator of lam * 0.5 * ||u||_p^2  (Lemma C.3)
+# Proximal operator of lam * 0.5 * ||u||_p^2  (Lemma C.2)
 # ---------------------------------------------------------------------------
 
 
@@ -57,7 +57,7 @@ def _scalar_roots(a: np.ndarray, c: float, p: float) -> np.ndarray:
 
 
 def prox_half_sq_pnorm(v: np.ndarray, lam: float, p: float) -> np.ndarray:
-    """argmin_u lam * 0.5 * ||u||_p^2 + 0.5 * ||u - v||_2^2  (Lemma C.3)."""
+    """argmin_u lam * 0.5 * ||u||_p^2 + 0.5 * ||u - v||_2^2  (Lemma C.2)."""
     if lam <= 0.0:
         return v.copy()
     a = np.abs(v)
@@ -76,7 +76,7 @@ def prox_half_sq_pnorm(v: np.ndarray, lam: float, p: float) -> np.ndarray:
 
 
 def grad_half_sq_pnorm(v: np.ndarray, p: float) -> np.ndarray:
-    """Gradient of 0.5 * ||v||_p^2 (Lemma C.1(ii))."""
+    """Gradient of 0.5 * ||v||_p^2."""
     a = np.abs(v)
     vp = float(np.sum(a ** p) ** (1.0 / p))
     if vp == 0.0:
@@ -96,7 +96,7 @@ def foc_residual(A: np.ndarray, y: np.ndarray, v: np.ndarray, eta: float, p: flo
 
 
 # ---------------------------------------------------------------------------
-# AMLE-PGD: proximal gradient with certificate stop (Algorithm 2, Option B)
+# AMLE-PGD: proximal gradient with certificate stop (Algorithm 2)
 # ---------------------------------------------------------------------------
 
 

@@ -65,7 +65,7 @@ def test_prox_against_cvxpy() -> None:
             cp.Problem(cp.Minimize(lam * 0.5 * cp.square(cp.pnorm(u, p)) + 0.5 * cp.sum_squares(u - v))).solve(
                 solver=cp.MOSEK)
             mine = S.prox_half_sq_pnorm(v, lam, p)
-            # optimality condition u + lam * grad r(u) = v  (Lemma C.3)
+            # optimality condition u + lam * grad r(u) = v  (Lemma C.2)
             kkt = np.max(np.abs(mine + lam * S.grad_half_sq_pnorm(mine, p) - v)) / (1 + np.max(np.abs(v)))
 
             def obj(w):
