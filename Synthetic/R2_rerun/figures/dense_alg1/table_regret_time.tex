@@ -1,0 +1,22 @@
+% Suggested caption: Regret and computational time ($T = 10{,}000$) at the best hyperparameters across
+% different SNR levels.  Regret in thousands: mean over 10 trials (standard error); lowest regret per
+% SNR in bold.  Total time: time spent updating the estimator over the whole horizon (s), mean over trials:
+% 99 refits (end of each exploration phase) for ILQX, SPO+, AMLE-MOSEK and AMLE-PGD; 10,000 recursive updates
+% (one per period) for AdaGrad; pricing decisions excluded.  For AMLE-MOSEK and ILQX, refits in which MOSEK
+% stalled are charged the median time of a regular solve.  AMLE-PGD (representative): largest tolerance
+% within 1% of its minimum regret at the best eta0.  The exploration periods, identical
+% for all methods, contribute 657.9K (low), 657.9K (mid), 657.9K (high) to every method's regret.
+\begin{tabular}{lccccccccc}
+\toprule
+ & \multicolumn{3}{c}{Low SNR} & \multicolumn{3}{c}{Mid SNR} & \multicolumn{3}{c}{High SNR} \\
+\cmidrule(lr){2-4} \cmidrule(lr){5-7} \cmidrule(lr){8-10}
+Method & Best Hyperparameter & Regret ($\times 10^3$) & Total time (s) & Best Hyperparameter & Regret ($\times 10^3$) & Total time (s) & Best Hyperparameter & Regret ($\times 10^3$) & Total time (s) \\
+\midrule
+ILQX & $\mathring{\lambda} = 50$ & 818.7 (7.9) & 284.97 & $\mathring{\lambda} = 5$ & 699.7 (5.4) & 201.43 & $\mathring{\lambda} = 1.58$ & 667.4 (5.5) & 150.15 \\
+SPO+ & $\mathrm{lr}_{\mathrm{SPO+}} = 0.0005$ & 841.3 (8.4) & 157.74 & $\mathrm{lr}_{\mathrm{SPO+}} = 0.0005$ & 808.9 (5.4) & 170.95 & $\mathrm{lr}_{\mathrm{SPO+}} = 0.0005$ & 805.2 (5.4) & 131.30 \\
+AdaGrad & $\mathrm{lr}_{\mathrm{AdaGrad}} = 1$ & 1714.7 (61.6) & 0.08 & $\mathrm{lr}_{\mathrm{AdaGrad}} = 3.16$ & 1421.1 (15.1) & 0.08 & $\mathrm{lr}_{\mathrm{AdaGrad}} = 3.16$ & 1261.9 (54.7) & 0.07 \\
+AMLE-MOSEK & $\mathring{\eta} = 15.8$ & 800.5 (9.2) & 305.26 & $\mathring{\eta} = 1.58$ & 696.1 (5.4) & 274.85 & $\mathring{\eta} = 0.5$ & \textbf{666.2 (5.5)} & 219.04 \\
+AMLE-PGD (representative) & $\mathring{\eta} = 15.8, \mathring{\varepsilon} = 100$ & 801.5 (10.7) & 11.99 & $\mathring{\eta} = 1.58, \mathring{\varepsilon} = 30$ & 697.8 (5.2) & 37.32 & $\mathring{\eta} = 0.158, \mathring{\varepsilon} = 10$ & 668.6 (5.4) & 69.49 \\
+AMLE-PGD (minimum regret) & $\mathring{\eta} = 15.8, \mathring{\varepsilon} = 30$ & \textbf{799.6 (9.2)} & 92.46 & $\mathring{\eta} = 1.58, \mathring{\varepsilon} = 10$ & \textbf{695.6 (5.4)} & 184.04 & $\mathring{\eta} = 0.158, \mathring{\varepsilon} = 3$ & 666.3 (5.5) & 308.08 \\
+\bottomrule
+\end{tabular}

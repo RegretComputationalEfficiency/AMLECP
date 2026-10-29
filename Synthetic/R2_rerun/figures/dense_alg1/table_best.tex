@@ -1,0 +1,26 @@
+\begin{tabular}{llrrrrrrr}
+\toprule
+SNR & Method (hyperparameters) & Final regret & Regret ratio & Exploitation regret & Exploit.\ ratio & Time w/o fallback (s) & Time ratio & Iter./update \\
+\midrule
+Low & AMLE-PGD (representative) ($\mathring{\eta}$=15.8, $\mathring{\varepsilon}$=100) & 801.5K $\pm$ 21.1K & 1.001 & 143.6K $\pm$ 23.8K & 0.999 & 11.99 & 0.039 & 137 \\
+Low & AMLE-PGD (minimum regret) ($\mathring{\eta}$=15.8, $\mathring{\varepsilon}$=30) & 799.6K $\pm$ 18K & 0.999 & 141.6K $\pm$ 20K & 0.993 & 92.46 & 0.303 & 986 \\
+Low & AMLE-MOSEK ($\mathring{\eta}$=15.8) & 800.5K $\pm$ 18K & 1.000 & 142.6K $\pm$ 19.9K & 1.000 & 305.26 & 1.000 & -- \\
+Low & ILQX ($\mathring{\lambda}$=50) & 818.7K $\pm$ 15.5K & 1.023 & 160.8K $\pm$ 15.6K & 1.143 & 284.97 & 0.933 & -- \\
+Low & SPO+ (lr=0.0005) & 841.3K $\pm$ 16.5K & 1.052 & 183.4K $\pm$ 13.3K & 1.349 & 157.74 & 0.517 & -- \\
+Low & AdaGrad (lr=1) & 1.71M $\pm$ 120.8K & 2.145 & 1.06M $\pm$ 129.9K & 7.634 & 0.08 & 0.000 & -- \\
+\midrule
+Mid & AMLE-PGD (representative) ($\mathring{\eta}$=1.58, $\mathring{\varepsilon}$=30) & 697.8K $\pm$ 10.2K & 1.003 & 39.9K $\pm$ 2K & 1.046 & 37.32 & 0.136 & 456 \\
+Mid & AMLE-PGD (minimum regret) ($\mathring{\eta}$=1.58, $\mathring{\varepsilon}$=10) & 695.6K $\pm$ 10.5K & 0.999 & 37.7K $\pm$ 1.3K & 0.988 & 184.04 & 0.670 & 2146 \\
+Mid & AMLE-MOSEK ($\mathring{\eta}$=1.58) & 696.1K $\pm$ 10.5K & 1.000 & 38.1K $\pm$ 1.3K & 1.000 & 274.85 & 1.000 & -- \\
+Mid & ILQX ($\mathring{\lambda}$=5) & 699.7K $\pm$ 10.5K & 1.005 & 41.8K $\pm$ 1.3K & 1.096 & 201.43 & 0.733 & -- \\
+Mid & SPO+ (lr=0.0005) & 808.9K $\pm$ 10.5K & 1.162 & 151K $\pm$ 2.6K & 3.969 & 170.95 & 0.622 & -- \\
+Mid & AdaGrad (lr=3.16) & 1.42M $\pm$ 29.5K & 2.042 & 763.2K $\pm$ 28.4K & 20.071 & 0.08 & 0.000 & -- \\
+\midrule
+High & AMLE-PGD (representative) ($\mathring{\eta}$=0.158, $\mathring{\varepsilon}$=10) & 668.6K $\pm$ 10.6K & 1.003 & 10.7K $\pm$ 660 & 1.275 & 69.49 & 0.333 & 1070 \\
+High & AMLE-PGD (minimum regret) ($\mathring{\eta}$=0.158, $\mathring{\varepsilon}$=3) & 666.3K $\pm$ 10.7K & 1.000 & 8.4K $\pm$ 397 & 1.002 & 308.08 & 1.477 & 4132 \\
+High & AMLE-MOSEK ($\mathring{\eta}$=0.5) & 666.2K $\pm$ 10.7K & 1.000 & 8.2K $\pm$ 420 & 1.000 & 219.04 & 1.000 & -- \\
+High & ILQX ($\mathring{\lambda}$=1.58) & 667.4K $\pm$ 10.7K & 1.002 & 9.4K $\pm$ 412 & 1.147 & 150.15 & 0.686 & -- \\
+High & SPO+ (lr=0.0005) & 805.2K $\pm$ 10.6K & 1.209 & 147.3K $\pm$ 1.6K & 17.955 & 131.30 & 0.600 & -- \\
+High & AdaGrad (lr=3.16) & 1.26M $\pm$ 107.2K & 1.899 & 604K $\pm$ 113.9K & 74.110 & 0.07 & 0.000 & -- \\
+\bottomrule
+\end{tabular}

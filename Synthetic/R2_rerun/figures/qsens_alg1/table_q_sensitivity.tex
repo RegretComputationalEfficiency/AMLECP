@@ -1,0 +1,25 @@
+\begin{tabular}{lllrrr}
+\toprule
+Case & Method & Hyperparameters & Regret ($\times10^3$) & Exploitation regret ($\times10^3$) & Total time (s) \\
+\midrule
+I & AMLE-MOSEK & $q=2$, $\mathring\eta=10$ & 696.7 (4.9) & 38.8 (1.6) & 199.99 \\
+I & AMLE-MOSEK & $q=4$, $\mathring\eta=1.58$ & 696.1 (5.4) & 38.1 (0.7) & 274.85 \\
+I & AMLE-MOSEK & $q=1+\log\kappa_\theta$, $\mathring\eta=1$ & 696.5 (5.4) & 38.5 (0.7) & 391.83 \\
+I & AMLE-PGD (representative) & $q=2$, $\mathring\eta=10$, $\mathring\varepsilon=30$ & 701.3 (4.6) & 43.4 (1.9) & 28.49 \\
+I & AMLE-PGD (representative) & $q=4$, $\mathring\eta=1.58$, $\mathring\varepsilon=30$ & 697.8 (5.2) & 39.9 (1.0) & 37.32 \\
+I & AMLE-PGD (representative) & $q=1+\log\kappa_\theta$, $\mathring\eta=1$, $\mathring\varepsilon=30$ & 698.3 (5.2) & 40.4 (1.1) & 50.49 \\
+I & AMLE-PGD (minimum regret) & $q=2$, $\mathring\eta=10$, $\mathring\varepsilon=3$ & 696.7 (4.9) & 38.8 (1.6) & 513.55 \\
+I & AMLE-PGD (minimum regret) & $q=4$, $\mathring\eta=1.58$, $\mathring\varepsilon=10$ & 695.6 (5.4) & 37.7 (0.7) & 184.04 \\
+I & AMLE-PGD (minimum regret) & $q=1+\log\kappa_\theta$, $\mathring\eta=1$, $\mathring\varepsilon=10$ & 695.9 (5.4) & 37.9 (0.7) & 266.67 \\
+\midrule
+II & AMLE-MOSEK & $q=2$, $\mathring\eta=1$ & 1944.9 (42.6) & 533.9 (37.6) & 119.79 \\
+II & AMLE-MOSEK & $q=4$, $\mathring\eta=1$ & 1848.1 (43.8) & 437.1 (39.4) & 149.40 \\
+II & AMLE-MOSEK & $q=1+\log\kappa_\theta$, $\mathring\eta=1$ & 1832.6 (44.9) & 421.6 (41.3) & 211.50 \\
+II & AMLE-PGD (representative) & $q=2$, $\mathring\eta=1$, $\mathring\varepsilon=3$ & 1942.2 (42.4) & 531.1 (37.5) & 2.33 \\
+II & AMLE-PGD (representative) & $q=4$, $\mathring\eta=0.316$, $\mathring\varepsilon=3$ & 1849.8 (39.6) & 438.8 (34.9) & 5.54 \\
+II & AMLE-PGD (representative) & $q=1+\log\kappa_\theta$, $\mathring\eta=0.316$, $\mathring\varepsilon=3$ & 1828.6 (39.0) & 417.6 (33.6) & 8.86 \\
+II & AMLE-PGD (minimum regret) & $q=2$, $\mathring\eta=1$, $\mathring\varepsilon=3$ & 1942.2 (42.4) & 531.1 (37.5) & 2.33 \\
+II & AMLE-PGD (minimum regret) & $q=4$, $\mathring\eta=0.316$, $\mathring\varepsilon=3$ & 1849.8 (39.6) & 438.8 (34.9) & 5.54 \\
+II & AMLE-PGD (minimum regret) & $q=1+\log\kappa_\theta$, $\mathring\eta=0.316$, $\mathring\varepsilon=3$ & 1828.6 (39.0) & 417.6 (33.6) & 8.86 \\
+\bottomrule
+\end{tabular}

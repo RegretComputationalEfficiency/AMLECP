@@ -12,6 +12,10 @@ ILQX, SPO+, AdaGrad-style updates) but differ in the data environment:
 | **Synthetic benchmarks** | [`Synthetic/`](Synthetic/) | Gaussian-feature toy online pricing; SNR sweeps and `q`-sensitivity studies on simulated arrivals. |
 | **NYC taxi (real data)** | [`NYCTaxi/`](NYCTaxi/) | Kaggle-trained acceptance simulator + December 2014 NYC TLC out-of-sample online pricing tests. |
 
+For the revised paper (second round), Section 5.1 (Table 2, Figure 4) and Figure EC.1 are produced by
+[`Synthetic/R2_rerun/`](Synthetic/R2_rerun/); `Synthetic/Main_Gaussian/` and `Synthetic/q_sensitivity/` hold the
+first-round code.
+
 ## Experiment overview
 
 ```text
@@ -20,6 +24,7 @@ ILQX, SPO+, AdaGrad-style updates) but differ in the data environment:
 ├──────────────────────────────────────────────────────────────────────────┤
 │  Main_Gaussian/  →  online methods  →  regret & solver-time CSVs         │
 │  q_sensitivity/  →  vary q, compare estimators on same synthetic DGP     │
+│  R2_rerun/       →  revised paper: Section 5.1 and Figure EC.1           │
 └──────────────────────────────────────────────────────────────────────────┘
 
 ┌──────────────────────────────────────────────────────────────────────────┐
@@ -32,6 +37,7 @@ ILQX, SPO+, AdaGrad-style updates) but differ in the data environment:
 
 ## Where to start
 
+- **Revised paper, Section 5.1 and Figure EC.1:** [`Synthetic/R2_rerun/README.md`](Synthetic/R2_rerun/README.md)
 - **Synthetic Gaussian benchmark:** [`Synthetic/Main_Gaussian/README.md`](Synthetic/Main_Gaussian/README.md)
 - **Synthetic `q` sensitivity:** [`Synthetic/q_sensitivity/README.md`](Synthetic/q_sensitivity/README.md) (if present)
 - **NYC taxi pipeline (train + December test):** [`NYCTaxi/README.md`](NYCTaxi/README.md)
