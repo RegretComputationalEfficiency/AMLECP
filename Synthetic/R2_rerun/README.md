@@ -1,7 +1,8 @@
 # R2 rerun of Section 5.1 (Case Study I: linear demand)
 
 Rerun of the simulation study of Section 5.1 (Case Study I) and of the sensitivity study to q (Figure EC.1),
-written for the second-round revision. The first-round code is in `../Main_Gaussian/` and `../q_sensitivity/`.
+written for the second-round revision. The first-round code is kept at the tag
+[`round1`](https://github.com/RegretComputationalEfficiency/AMLECP/tree/round1) of this repository.
 
 The results in the paper come from runs with the exploration schedule of Algorithm 1 (`env_r2.schedule`).
 The summaries for all hyperparameters are in `figures/dense_alg1/` (Table 2 and Figure 4) and
@@ -17,7 +18,7 @@ and CLARABEL 0.10, PyTorch 2.13 (SPO+), matplotlib 3.9.
 | File | Content |
 |---|---|
 | `env_r2.py` | Data-generating process (identical to R1), Algorithm 1 exploration schedule, revenue / oracle, eta_k, eps_k, lambda_t |
-| `truncate_normal_sample_time_varying.py` | Feature sampler of the first-round code (the same file as `../Main_Gaussian/gaussian_pricing/utils/truncate_normal_sample_time_varying.py`), imported by `env_r2.py` |
+| `truncate_normal_sample_time_varying.py` | Feature sampler of the first-round code (unchanged; `Synthetic/Main_Gaussian/gaussian_pricing/utils/` at the tag `round1`), imported by `env_r2.py` |
 | `solvers_r2.py` | AMLE-PGD (proximal gradient, Algorithm 2), AMLE-MOSEK, ILQX, AdaGrad, SPO+ |
 | `run_r2.py` | Main experiment script: one job = (SNR, method, hyper-parameter, trial k) -> one `.npz` |
 | `plot_r2.py` | Figures and tables |
