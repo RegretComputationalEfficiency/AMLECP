@@ -24,7 +24,7 @@ import numpy as np
 from scipy.optimize import brentq
 
 # ---------------------------------------------------------------------------
-# Proximal operator of lam * 0.5 * ||u||_p^2  (Lemma C.2)
+# Proximal operator of lam * 0.5 * ||u||_p^2  (Lemma C.1)
 # ---------------------------------------------------------------------------
 
 
@@ -57,7 +57,7 @@ def _scalar_roots(a: np.ndarray, c: float, p: float) -> np.ndarray:
 
 
 def prox_half_sq_pnorm(v: np.ndarray, lam: float, p: float) -> np.ndarray:
-    """argmin_u lam * 0.5 * ||u||_p^2 + 0.5 * ||u - v||_2^2  (Lemma C.2)."""
+    """argmin_u lam * 0.5 * ||u||_p^2 + 0.5 * ||u - v||_2^2  (Lemma C.1)."""
     if lam <= 0.0:
         return v.copy()
     a = np.abs(v)

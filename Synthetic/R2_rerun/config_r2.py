@@ -28,7 +28,7 @@ Estimators (run_r2.py, solvers_r2.py)
     sqrt(|I_k|).  Each update starts from the previous estimate (the first from 0.1 * 1) and uses the step
     size 1/L_k, where L_k is 1.02 times the largest eigenvalue of the Hessian of the negative log-likelihood,
     computed by warm-started power iterations (run_r2.py, ``1.02 * lam_max``).  The proximal step is the prox of
-    the half-squared l_p norm, computed by bisection as in Lemma C.2 (solvers_r2.prox_half_sq_pnorm).  An update
+    the half-squared l_p norm, computed by bisection as in Lemma C.1 (solvers_r2.prox_half_sq_pnorm).  An update
     stops as soon as ||G^{j+1}||_2 <= eps_k, which certifies Condition 1; a safeguard caps an update at
     20,000 iterations.  All updates stopped by the certificate except 0.2% of the updates of one configuration
     (eta0 = 0.5, eps0 = 3 at mid SNR).

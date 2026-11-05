@@ -9,7 +9,7 @@ ILQX, SPO+, AdaGrad-style updates) but differ in the data environment:
 
 | Subproject | Folder | What it covers |
 | --- | --- | --- |
-| **Synthetic benchmarks** | [`Synthetic/R2_rerun/`](Synthetic/R2_rerun/) | Linear demand with Gaussian features: Section 5.1 (Table 2, Figure 4) across SNR levels and the sensitivity to `q` (Figure EC.1). |
+| **Synthetic benchmarks** | [`Synthetic/R2_rerun/`](Synthetic/R2_rerun/) | Linear demand: Section 5.1 (Table 2, Figure 4) across SNR levels, the time of the exact solver (Figure 2), and the sensitivity to `q` with dense and sparse parameters (Figure EC.1, Appendix B). |
 | **NYC taxi (real data)** | [`NYCTaxi/`](NYCTaxi/) | Kaggle-trained acceptance simulator + December 2014 NYC TLC out-of-sample online pricing tests. |
 
 The code of the first-round version (before the second-round revision) is kept at the tag
@@ -21,7 +21,7 @@ The code of the first-round version (before the second-round revision) is kept a
 ┌──────────────────────────────────────────────────────────────────────────┐
 │  Synthetic/ — controlled feature geometry (Gaussian, p-norm budget q)       │
 ├──────────────────────────────────────────────────────────────────────────┤
-│  R2_rerun/       →  revised paper: Section 5.1 and Figure EC.1           │
+│  R2_rerun/       →  revised paper: Figure 2, Section 5.1, Figure EC.1    │
 └──────────────────────────────────────────────────────────────────────────┘
 
 ┌──────────────────────────────────────────────────────────────────────────┐
@@ -34,7 +34,7 @@ The code of the first-round version (before the second-round revision) is kept a
 
 ## Where to start
 
-- **Synthetic experiments, Section 5.1 and Figure EC.1:** [`Synthetic/R2_rerun/README.md`](Synthetic/R2_rerun/README.md)
+- **Synthetic experiments, Figure 2, Section 5.1 and Figure EC.1:** [`Synthetic/R2_rerun/README.md`](Synthetic/R2_rerun/README.md)
 - **NYC taxi pipeline (train + December test):** [`NYCTaxi/README.md`](NYCTaxi/README.md)
 
 Each subfolder documents its own dependencies (MOSEK, Gurobi/PyEPO where applicable),
@@ -44,7 +44,7 @@ the NYCTaxi README for download links.
 ## Quick start (pointers)
 
 ```bash
-# Synthetic experiments (Section 5.1 and Figure EC.1); requirements and run commands in Synthetic/R2_rerun/README.md
+# Synthetic experiments (Figure 2, Section 5.1 and Figure EC.1); requirements and run commands in Synthetic/R2_rerun/README.md
 (cd Synthetic/R2_rerun && python3 config_r2.py)   # settings, grids and result files of Section 5.1
 
 # NYC taxi December test (uses pre-trained simulator artifacts when available)
