@@ -5,10 +5,11 @@ parameters (Figure EC.1, Appendix B) and of the solver timing of Figure 2, writt
 [`round1`](https://github.com/RegretComputationalEfficiency/AMLECP/tree/round1) of this repository.
 
 The results in the paper come from runs with the exploration schedule of Algorithm 1 (`env_r2.schedule`).
-The summaries for all hyperparameters are in `figures/dense_alg1/` (Table 2 and Figure 4), `figures/qsens_alg1/`
-(Case I of Figure EC.1) and `figures/qsens_sparse/` (Figure EC.1 and the sparse Case II with kappa = 730);
-Figure 2 and its summary are in `figures/mle_scaling/`. The raw per-trial outputs (`results/<tag>/`) are not
-included; the commands under Running regenerate them in `results/dense_alg1`, `results/qsens_alg1`,
+The repository keeps the figures of the paper and the results behind them: `figures/mle_scaling/` (Figure 2
+and its summary), `figures/dense_alg1/` (Figure 4; Table 2 in `table_regret_time.tex` and `summary_best.csv`),
+`figures/qsens_sparse/` (Figure EC.1; Table 3 and panels (b)-(c) in `summary_sparse_case2.csv`) and
+`figures/qsens_alg1/summary_q_sensitivity.csv` (Case I of Figure EC.1). The raw per-trial outputs
+(`results/<tag>/`) and the figures and summaries for all hyperparameters are not included; the commands under Running regenerate them in `results/dense_alg1`, `results/qsens_alg1`,
 `results/qsens_tol_alg1`, `results/sparse_d729` and `results/mle_scaling`.
 
 Requirements (versions used): Python 3.12, numpy 1.26, scipy 1.11, cvxpy 1.5 with MOSEK 11 (license required)
@@ -23,7 +24,7 @@ and CLARABEL 0.10, PyTorch 2.13 (SPO+), matplotlib 3.9.
 | `solvers_r2.py` | AMLE-PGD (proximal gradient descent), AMLE-MOSEK, ILQX, AdaGrad, SPO+ |
 | `run_r2.py` | Main experiment script: one job = (SNR, method, hyper-parameter, trial k) -> one `.npz` |
 | `plot_r2.py` | Figures and tables |
-| `config_r2.py` | Settings of Case Study I that the paper refers to the repository for: implementation details, hyperparameter grids, selection rules and the result files for all hyperparameters (`figures/dense_alg1/`); `python3 config_r2.py` prints them |
+| `config_r2.py` | Settings of Case Study I that the paper refers to the repository for: implementation details, hyperparameter grids, selection rules and the output files of `plot_r2.py` (`figures/dense_alg1/`); `python3 config_r2.py` prints them |
 | `tests_r2.py` | Checks: environment = R1, prox / PGD vs MOSEK, SPO+ loss |
 | `check_timing_r2.py` | Flags runs whose per-update times are implausible (e.g. the machine slept); `--delete` removes them for recomputation |
 | `grid_dense.json` | Per-SNR grids of the dense design (`{"by_snr": {snr: {method: [params]}}}`; see below) |

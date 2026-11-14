@@ -49,7 +49,9 @@ Selection rules (plot_r2.py)
   * Representative AMLE-PGD configuration: at the best eta0, the largest eps0 whose mean final regret is within
     1% of the minimum.
 
-Results for all hyperparameters (figures/dense_alg1/, from ``R2_DESIGN=dense python3 plot_r2.py --tag dense_alg1``)
+Outputs of ``R2_DESIGN=dense python3 plot_r2.py --tag dense_alg1`` (figures/dense_alg1/; the repository keeps
+fig_best_regret.pdf, fig_regret_time.pdf, summary_best.csv and table_regret_time.tex)
+  fig_best_regret.pdf, fig_regret_time.pdf   Figure 4
   fig_all_params_final.pdf          final regret of every method and hyperparameter (mean, 95% CI)
   fig_all_params_curves_pgd.pdf     regret curves of AMLE-PGD for every eps0 at three values of eta0
   fig_all_params_curves_bench.pdf   regret curves of the benchmarks for every hyperparameter
@@ -123,7 +125,7 @@ def main() -> None:
             keys = sorted({k for p in g[snr][m] for k in p})
             vals = {k: sorted({p[k] for p in g[snr][m]}) for k in keys}
             print("  {:8s} {:5s} {}".format(m, snr, "; ".join("{} in {}".format(k, vals[k]) for k in keys)))
-    print("\nResults for all hyperparameters:", FIGURE_DIR)
+    print("\nOutput files:", FIGURE_DIR)
     for name in sorted(os.listdir(FIGURE_DIR)) if os.path.isdir(FIGURE_DIR) else []:
         print("  ", name)
 
