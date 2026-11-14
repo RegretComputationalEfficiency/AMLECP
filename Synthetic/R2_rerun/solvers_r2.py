@@ -138,6 +138,74 @@ def amle_pgd(A: np.ndarray, y: np.ndarray, eta: float, eps: float, v0: np.ndarra
     return {"v": v, "iters": max_iter, "stop": "maxiter", "G": G_norm}
 
 
+def amle_apgd(A: np.ndarray, y: np.ndarray, eta: float, eps: float, v0: np.ndarray, L_max: float,
+              p: float, max_iter: int, L_init: float | None = None) -> dict:
+    """Accelerated proximal gradient with backtracking on 0.5||y - Av||^2 + eta * 0.5||v||_p^2.
+
+    Every iterate is a proximal gradient step from the extrapolated point z with step 1/L,
+        v^{j+1} = prox_{(eta/L) r}(z^j - grad f(z^j)/L),
+    so G^{j+1} = L (z^j - v^{j+1}) + grad f(v^{j+1}) - grad f(z^j) belongs to
+    grad f(v^{j+1}) + eta grad r(v^{j+1}), and the stop ||G^{j+1}||_2 <= eps verifies Condition 1
+    exactly as in amle_pgd.
+      * Backtracking: L starts at L_init/2 (default L_max) and is doubled until the quadratic upper bound
+        f(v+) <= f(z) + <grad f(z), v+ - z> + (L/2)||v+ - z||^2 holds, i.e. ||A(v+ - z)||^2 <= L ||v+ - z||^2
+        for the least-squares loss; L never exceeds L_max = 1.02 lambda_max(A^T A), the constant of amle_pgd.
+      * Acceleration: FISTA extrapolation with the adaptive (gradient) restart of O'Donoghue and Candes (2015).
+    One iteration costs one product with A and one with A^T (grad f(z) follows by linearity); a rejected
+    backtracking trial costs one product with A.
+    """
+    v = v0.copy()
+    u = A @ v
+    g = A.T @ (u - y)
+    z, uz, gz = v, u, g
+    L = L_max if L_init is None else min(max(0.5 * L_init, 1e-12 * L_max), L_max)
+    tk = 1.0
+    trials = 0
+    G_norm = math.inf
+    for j in range(1, max_iter + 1):
+        while True:
+            v_new = prox_half_sq_pnorm(z - gz / L, eta / L, p)
+            d = v_new - z
+            u_new = A @ v_new
+            trials += 1
+            du = u_new - uz
+            if L >= L_max or float(du @ du) <= L * float(d @ d):
+                break
+            L = min(2.0 * L, L_max)
+        g_new = A.T @ (u_new - y)
+        G_norm = float(np.linalg.norm(-L * d + g_new - gz))
+        if G_norm <= eps:
+            return {"v": v_new, "iters": j, "trials": trials, "stop": "cert", "G": G_norm, "L": L}
+        if float((z - v_new) @ (v_new - v)) > 0.0:      # adaptive restart
+            tk = 1.0
+            z, uz, gz = v_new, u_new, g_new
+        else:
+            tn = 0.5 * (1.0 + math.sqrt(1.0 + 4.0 * tk * tk))
+            b = (tk - 1.0) / tn
+            z = v_new + b * (v_new - v)
+            uz = u_new + b * (u_new - u)
+            gz = g_new + b * (g_new - g)
+            tk = tn
+        v, u, g = v_new, u_new, g_new
+    return {"v": v, "iters": max_iter, "trials": trials, "stop": "maxiter", "G": G_norm, "L": L}
+
+
+# Solver used by the AMLE-PGD runs: "apg" (accelerated, backtracking; default) or "pg" (Algorithm 2 with the
+# fixed step 1/L_k, the solver of the runs in results/dense_alg1, qsens_tol_alg1 and sparse_d729).
+PGD_SOLVER = __import__("os").environ.get("R2_PGD", "apg")
+assert PGD_SOLVER in ("apg", "pg"), PGD_SOLVER
+
+
+def solve_pgd(A: np.ndarray, y: np.ndarray, eta: float, eps: float, v0: np.ndarray, L_max: float,
+              p: float, max_iter: int, L_init: float | None = None) -> dict:
+    """AMLE-PGD fit with the solver selected by the environment variable R2_PGD."""
+    if PGD_SOLVER == "pg":
+        res = amle_pgd(A, y, eta, eps, v0, L_max, p, max_iter)
+        res.update(trials=res["iters"], L=L_max)
+        return res
+    return amle_apgd(A, y, eta, eps, v0, L_max, p, max_iter, L_init)
+
+
 # ---------------------------------------------------------------------------
 # AMLE-MOSEK and ILQX (cvxpy + MOSEK), same objective scale as AMLE-PGD
 # ---------------------------------------------------------------------------

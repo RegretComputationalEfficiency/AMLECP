@@ -24,14 +24,12 @@ Data-generating process (env_r2.py, R2_DESIGN=dense)
 
 Estimators (run_r2.py, solvers_r2.py)
   * Every estimator is refit at the end of each exploration phase on all exploration samples collected so far.
-  * AMLE-PGD (Algorithm 2): eta_k = eta0 kappa^(1/q - 1/2) sqrt(|I_k|) and eps_k = eps0 kappa^(1/2 - 1/q)
-    sqrt(|I_k|).  Each update starts from the previous estimate (the first from 0.1 * 1) and uses the step
-    size 1/L_k, where L_k is 1.02 times the largest eigenvalue of the Hessian of the negative log-likelihood,
-    computed by warm-started power iterations (run_r2.py, ``1.02 * lam_max``).  The proximal step is the prox of
+  * AMLE-PGD (Algorithm 2): eta_k = eta0 kappa^(1/q - 1/2) sqrt(|I_k|) and eps_k = eps0 sqrt(kappa |I_k|), the
+    form of eq. (7) (parameter eps_q = inf).  Each update starts from the previous estimate (the first from 0.1 * 1) and is
+    computed by proximal gradient descent (solvers_r2.solve_pgd).  The proximal step is the prox of
     the half-squared l_p norm, computed by bisection as in Lemma C.1 (solvers_r2.prox_half_sq_pnorm).  An update
     stops as soon as ||G^{j+1}||_2 <= eps_k, which certifies Condition 1; a safeguard caps an update at
-    20,000 iterations.  All updates stopped by the certificate except 0.2% of the updates of one configuration
-    (eta0 = 0.5, eps0 = 3 at mid SNR).
+    20,000 iterations.  Every update of every configuration stopped by the certificate.
   * C_k = R^kappa.  AMLE-MOSEK, ILQX and AdaGrad keep the bound ||v||_1 <= 1e4 as a numerical safeguard; it is
     never active.
   * AMLE-MOSEK computes the exact minimizer of the same regularized problem with MOSEK through CVXPY.  ILQX

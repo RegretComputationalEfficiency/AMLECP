@@ -5,7 +5,6 @@
 # repeated (see plot_qsens_r2.py):
 #   Case I : AMLE-MOSEK for q = 2 and 1 + log kappa (grid_qsens.json) and AMLE-PGD at the common tolerance
 #            (grid_qsens_tol.json); q = 4 comes from results/dense_alg1;
-#   Case II: all q, design heavy100 (grid_qsens_heavy100.json).
 # Interrupted runs resume with the same command (existing outputs are skipped).
 cd "$(dirname "$0")" || exit 1
 mkdir -p logs
@@ -18,6 +17,3 @@ echo "qsens_alg1: exit $? ok=$(grep -c ' ok ' logs/qsens_alg1.log) error=$(grep 
 python3 run_r2.py --design dense --tag qsens_tol_alg1 --snr mid --methods PGD --grid main \
     --grid-json grid_qsens_tol.json --workers 9 > logs/qsens_tol_alg1.log 2>&1
 echo "qsens_tol_alg1: exit $? ok=$(grep -c ' ok ' logs/qsens_tol_alg1.log) error=$(grep -c ' error ' logs/qsens_tol_alg1.log)"
-python3 run_r2.py --design heavy100 --tag qsens_heavy100_alg1 --snr mid --methods MOSEK PGD --grid main \
-    --grid-json grid_qsens_heavy100.json --workers 9 > logs/qsens_heavy100_alg1.log 2>&1
-echo "qsens_heavy100_alg1: exit $? ok=$(grep -c ' ok ' logs/qsens_heavy100_alg1.log) error=$(grep -c ' error ' logs/qsens_heavy100_alg1.log)"

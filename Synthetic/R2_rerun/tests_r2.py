@@ -96,6 +96,13 @@ def test_pgd_against_mosek() -> None:
         assert res["stop"] == "cert" and abs(gap) < 1e-5 * abs(S.objective(A, y, v_ms, eta, p))
         # certificate is a valid upper bound on the first-order residual when C_k is inactive
         assert foc <= res["G"] * (1 + 1e-6) + 1e-9
+        acc = S.amle_apgd(A, y, eta, 1e-6, np.full(dim, 0.1), 1.02 * lam, p, 2_000_000, L_init=0.01 * lam)
+        foc_a = S.foc_residual(A, y, acc["v"], eta, p)
+        gap_a = S.objective(A, y, acc["v"], eta, p) - S.objective(A, y, v_ms, eta, p)
+        print("APGD vs MOSEK, p={:.4f}: iters={} (trials {}), stop={}, ||G||={:.2e}, ||grad D||={:.2e}, obj gap={:.2e}"
+              .format(p, acc["iters"], acc["trials"], acc["stop"], acc["G"], foc_a, gap_a))
+        assert acc["stop"] == "cert" and abs(gap_a) < 1e-5 * abs(S.objective(A, y, v_ms, eta, p))
+        assert foc_a <= acc["G"] * (1 + 1e-6) + 1e-9 and acc["L"] <= 1.02 * lam * (1 + 1e-12)
 
 
 def test_spoplus_loss() -> None:

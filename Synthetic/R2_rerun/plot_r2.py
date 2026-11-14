@@ -637,7 +637,7 @@ def write_table_regret_time(best, snrs, outdir):
         if m in ("SPO+", "AdaGrad"):
             return r"$\mathrm{{lr}}_{{\mathrm{{{}}}}} = {:g}$".format(m, param["lr"])
         return "$" + ", ".join("{} = {:g}".format(hp_name[k], param[k])
-                               for k in sorted(param, key=_ORDER.index)) + "$"
+                               for k in sorted(param, key=_ORDER.index) if k in hp_name) + "$"
 
     lowest = {snr: min(best[(snr, m)]["final_mean"] for m in order if (snr, m) in best) for snr in snrs}
     explore = {snr: best[(snr, "MOSEK")]["final_mean"] - best[(snr, "MOSEK")]["exploit_mean"]

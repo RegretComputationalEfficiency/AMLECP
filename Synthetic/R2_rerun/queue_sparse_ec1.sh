@@ -8,5 +8,7 @@ K="1 2 3 4 5 6 7 8 9 10"
 python3 sparse_r2.py --d 729 --T 50000 --tag sparse_d729 --grid-json grid_sparse_d729_m27.json --m 27 --k $K --workers 9
 python3 sparse_r2.py --d 729 --T 50000 --tag sparse_d729 --grid-json grid_sparse_d729_m27_qsens.json --methods dense --m 27 --k $K --workers 9
 python3 sparse_r2.py --d 729 --T 50000 --tag sparse_d729 --grid-json grid_sparse_d729_m3.json --m 3 --k $K --workers 9
+python3 sparse_r2.py --d 729 --T 50000 --tag sparse_d729 --grid-json grid_sparse_d729_m3_qsens.json --methods dense --m 3 --k $K --workers 9
+python3 sparse_r2.py --d 729 --T 50000 --tag sparse_d729 --grid-json grid_sparse_d729_m3_qsens_ext.json --methods dense --m 3 --k $K --workers 9
 python3 sparse_r2.py --d 200 --T 50000 --tag sparse_d200 --grid-json grid_sparse_d200_m14.json --m 14 --k $K --workers 9
 python3 sparse_r2.py --d 200 --T 50000 --tag sparse_d200 --grid-json grid_sparse_d200_m3.json --m 3 --k $K --workers 9

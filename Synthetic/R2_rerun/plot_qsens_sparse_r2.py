@@ -2,11 +2,13 @@
 
     python3 plot_qsens_sparse_r2.py      # needs results/dense_alg1, qsens_alg1, qsens_tol_alg1 and sparse_d729
 
-(a) Case I : unchanged, taken from plot_qsens_r2 (dense design of Section 5.1, T = 10,000).
+(a) Case I : dense design of Section 5.1, T = 10,000, configurations of plot_qsens_r2.select. The regrets of all
+             configurations agree within about 1%, so the panel shows the paired relative regret
+             R_k(t) / R_k^ref(t) - 1 (mean over trials k and 95% band), with AMLE-MOSEK (q = 2) as reference.
 (b) Case II: heavy100 design with d = 729 (kappa = 730), T = 50,000, m_0 = m_k = 27 = floor(sqrt(kappa)).
              AMLE-PGD with fixed q in {2, 4, 1 + log kappa} (dense eta scaling), AMLE-PGD with the exponent
              p_k = 1 + 1/log(kappa |I_k|) and the two-pass eta_k(W) of Appendix A.5, and ILQX (MOSEK).
-(c) Case II: the same with m_0 = m_k = 3 = ceil(sqrt(s)), s = 6 (fixed q = 4 only).
+(c) Case II: the same with m_0 = m_k = 3 = ceil(sqrt(s)), s = 6.
 For every configuration the hyper-parameter with the minimum mean final regret over 10 trials is shown.
 Output: figures/qsens_sparse/fig_q_sensitivity_sparse.pdf and summary_sparse_case2.csv.
 """
@@ -69,6 +71,64 @@ def load_case2(m: int) -> dict:
     return best
 
 
+MARK_SPAN = (0.35, 0.95)   # one marker per curve, staggered over this fraction of the horizon
+
+
+def mark_idx(n: int, i: int, n_series: int) -> list[int]:
+    """Index of the single marker of series i of n_series on a curve of n points."""
+    lo, hi = MARK_SPAN
+    return [min(n - 1, int(n * (lo + (hi - lo) * (i + 0.5) / n_series)))]
+
+
+REL_T0 = 1000   # first period shown in panel (a); earlier ratios are dominated by the first exploration block
+
+
+def panel1_relative(ax, sel: dict, tags: list[str], title: str) -> None:
+    """Paired relative regret of the Case I configurations with respect to AMLE-MOSEK (q = 2)."""
+    runs = {}
+    for tag in tags:
+        root = os.path.join(HERE, "results", tag)
+        if os.path.isdir(root):
+            runs.update(P.load(root))
+
+    def curves(r):
+        lst = runs[(r["snr"], r["method"], json.dumps(r["param"], sort_keys=True))]
+        return {d["k"]: d["regret"] for d in lst}
+
+    ref = curves(sel[("MOSEK", 2.0)])
+    ax.axhline(0.0, color=Q.Q_COLOR[2.0], ls=Q.M_STYLE["MOSEK"]["ls"], lw=1.2)
+    handles = [plt.Line2D([], [], color=Q.Q_COLOR[2.0], ls=Q.M_STYLE["MOSEK"]["ls"], lw=1.2,
+                          label=Q.label("MOSEK", sel[("MOSEK", 2.0)]) + ", reference")]
+    keys = [(m, q) for m in ("MOSEK", "PGD") for q in Q.Q_ORDER if (m, q) != ("MOSEK", 2.0) and (m, q) in sel]
+    for i, (method, q) in enumerate(keys):
+            r = sel[(method, q)]
+            cur = curves(r)
+            ks = sorted(set(cur) & set(ref))
+            R = np.vstack([cur[k] / ref[k] - 1.0 for k in ks]) * 100.0
+            T = R.shape[1]
+            idx = np.unique(np.linspace(REL_T0 - 1, T - 1, 300).astype(int))
+            t, mu = idx + 1, R[:, idx].mean(0)
+            se = R[:, idx].std(0, ddof=1) / math.sqrt(len(ks))
+            ax.fill_between(t, mu - 1.96 * se, mu + 1.96 * se, color=Q.Q_COLOR[q], alpha=0.10, lw=0)
+            ax.plot(t, mu, color=Q.Q_COLOR[q], ls=Q.M_STYLE[method]["ls"], lw=1.4)
+            mi = mark_idx(t.size, i, len(keys))
+            ax.plot(t[mi], mu[mi], marker=Q.M_STYLE[method]["marker"], ms=4.5, color=Q.Q_COLOR[q], mec="white",
+                    mew=0.8, ls="none")
+            handles.append(plt.Line2D([], [], color=Q.Q_COLOR[q], ls=Q.M_STYLE[method]["ls"], lw=1.4,
+                                      marker=Q.M_STYLE[method]["marker"], ms=4, mec="white", mew=0.8,
+                                      label=Q.label(method, r)))
+    ax.set_title(title, fontsize=9)
+    ax.set_xlabel("Period $t$")
+    ax.set_ylabel("Relative regret (%)")
+    ax.set_xlim(0, None)
+    lo, hi = ax.get_ylim()
+    ax.set_ylim(lo, hi + 0.9 * (hi - lo))      # room for the legend above the curves
+    ax.xaxis.set_major_formatter(FuncFormatter(P.compact))
+    P._style_axes(ax)
+    ax.legend(handles=handles, loc="upper right", fontsize=4.6, ncol=2, handlelength=1.8, labelspacing=0.2,
+              columnspacing=0.6, borderaxespad=0.2)
+
+
 def label(s: str, row: dict) -> str:
     p = row["param"]
     if s == "pk":
@@ -82,10 +142,9 @@ def label(s: str, row: dict) -> str:
 
 def panel2(ax, best: dict, title: str, ymax: float) -> None:
     handles = []
-    for s in ORDER:
-        row = best.get(s)
-        if row is None:
-            continue
+    present = [s for s in ORDER if s in best]
+    for i, s in enumerate(present):
+        row = best[s]
         T = row["curve_mean"].size
         idx = np.unique(np.linspace(0, T - 1, 400).astype(int))
         t, mu, se = idx + 1, row["curve_mean"][idx], row["curve_se"][idx]
@@ -93,7 +152,8 @@ def panel2(ax, best: dict, title: str, ymax: float) -> None:
         mk = "s" if s == "lasso" else "o"
         ax.fill_between(t, mu - 1.96 * se, mu + 1.96 * se, color=COLOR[s], alpha=0.08, lw=0)
         ax.plot(t, mu, color=COLOR[s], ls=ls, lw=1.6)
-        ax.plot(t[-1], mu[-1], marker=mk, ms=6, color=COLOR[s], mec="white", mew=1.0, ls="none")
+        mi = mark_idx(t.size, i, len(present))
+        ax.plot(t[mi], mu[mi], marker=mk, ms=4.5, color=COLOR[s], mec="white", mew=0.8, ls="none")
         handles.append(plt.Line2D([], [], color=COLOR[s], ls=ls, lw=1.6, marker=mk, ms=5, mec="white", mew=0.8,
                                   label=label(s, row)))
     ax.set_title(title, fontsize=9)
@@ -112,10 +172,7 @@ def main() -> None:
     os.makedirs(outdir, exist_ok=True)
     fig, axes = plt.subplots(1, 3, figsize=(11.2, 2.0))
     _, title1, tags1 = Q.CASES[0]
-    Q.panel(axes[0], Q.select(Q.collect(tags1)), title1)
-    leg = axes[0].get_legend()
-    axes[0].legend(handles=leg.legend_handles, loc="lower right", fontsize=4.8, ncol=2, handlelength=1.5,
-                   labelspacing=0.25, columnspacing=0.5, borderaxespad=0.2)
+    panel1_relative(axes[0], Q.select(Q.collect(tags1)), tags1, title1)
     b27, b3 = load_case2(27), load_case2(3)
     ymax = 1.08 * max(max(r["curve_mean"][-1] + 1.96 * r["curve_se"][-1] for r in b.values()) for b in (b27, b3))
     panel2(axes[1], b27, r"(b) Case II: sparse parameters, $m_k=\lfloor\sqrt{\kappa_\theta}\rfloor=27$", ymax)

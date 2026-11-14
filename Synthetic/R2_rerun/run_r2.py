@@ -95,7 +95,8 @@ def run_one(snr: str, method: str, param: dict, k_inst: int, T: int) -> dict:
     # q (feature norm of Assumption 2) sets the regularizer exponent p = q/(q-1) and the dimension factors of
     # eta_k and eps_k; default q = 4 (Section 5.1). The exploration schedule is the same for every q.
     # eps_q, if given, fixes the dimension factor of eps_k (kappa^(1/2 - 1/eps_q)) independently of q, so that
-    # different q are compared at the same tolerance.
+    # different q are compared at the same tolerance. eps_q = inf gives eps_k = eps0 sqrt(kappa |I_k|), the form of
+    # eq. (7) used in the paper (grid_dense.json, grid_qsens_tol.json).
     q_norm = float(param.get("q", env.Q_NORM))
     eps_q = float(param.get("eps_q", q_norm))
     p_reg = env.p_of_q(q_norm)
@@ -116,6 +117,7 @@ def run_one(snr: str, method: str, param: dict, k_inst: int, T: int) -> dict:
     v_hat: np.ndarray | None = None
     net = None
     u_pow = None
+    L_prev = None                       # final backtracking constant of the previous fit (accelerated solver)
     ada = S.AdaGradOnline(env.KAPPA, env.W_L1, lr=param["lr"]) if method == "AdaGrad" else None
     n_fit = 0
 
@@ -156,8 +158,8 @@ def run_one(snr: str, method: str, param: dict, k_inst: int, T: int) -> dict:
             eps = env.eps_k(param["eps"], N, eps_q)
             lam_max, u_pow = S.power_iteration(An, u_pow)
             v0 = np.full(env.KAPPA, PGD_INIT) if v_hat is None else v_hat
-            res = S.amle_pgd(An, yn, eta, eps, v0, 1.02 * lam_max, p_reg, PGD_MAX_ITER)
-            v_hat = res["v"]
+            res = S.solve_pgd(An, yn, eta, eps, v0, 1.02 * lam_max, p_reg, PGD_MAX_ITER, L_prev)
+            v_hat, L_prev = res["v"], res["L"]
             info.update(iters=res["iters"], stop=res["stop"], G=res["G"], eps=eps)
         elif method == "MOSEK":
             eta = env.eta_k(param["eta"], N, q_norm)
@@ -195,7 +197,8 @@ def run_one(snr: str, method: str, param: dict, k_inst: int, T: int) -> dict:
         "total_time": total_time,
         "meta": json.dumps({"design": env.DESIGN, "snr": snr, "method": method, "param": param, "k": k_inst, "T": T,
                             "sigma": sigma, "m": env.M_EXPLORE, "kappa": env.KAPPA,
-                            "q": q_norm, "p_reg": p_reg, "eps_q": eps_q, "price_unit": env.PRICE_UNIT}),
+                            "q": q_norm, "p_reg": p_reg, "eps_q": eps_q, "price_unit": env.PRICE_UNIT,
+                            "pgd_solver": S.PGD_SOLVER}),
     }
 
 

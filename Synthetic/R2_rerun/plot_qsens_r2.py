@@ -1,17 +1,16 @@
-"""Figure EC.1 (sensitivity to q) for the R2 rerun.
+"""Case I of Figure EC.1 (sensitivity to q) for the R2 rerun.
 
-Both cases: mid SNR (SNR = 1), 10 trials, Algorithm 2 for AMLE-PGD. q in {2, 4, 1 + log kappa_theta} sets the
+Mid SNR (SNR = 1), 10 trials, Algorithm 2 for AMLE-PGD. q in {2, 4, 1 + log kappa_theta} sets the
 regularizer exponent p = q/(q-1) and the dimension factor of eta_k; the exploration schedule (m_k = 27) is the
 same for every q, so that only the regularizer changes. All q use the same tolerance as Section 5.1,
-eps_k = eps0 kappa^(1/4) sqrt(|I_k|) (parameter eps_q = 4), so that they are compared at equal accuracy.
+eps_k = eps0 sqrt(kappa |I_k|) as in eq. (7) (parameter eps_q = inf), so that they are compared at equal accuracy.
   Case I : the dense design of Section 5.1 (T = 10,000). q = 4 is taken from results/dense_alg1; AMLE-MOSEK for
            q = 2 and q = 1 + log kappa_theta from results/qsens_alg1 (exact solutions, independent of eps); AMLE-PGD
            for these q from results/qsens_tol_alg1 (grid_qsens_tol.json). All runs use the Algorithm 1 schedule of
            env_r2.schedule (queue_qsens_alg1.sh).
-  Case II: heavy-tailed features and a sparse parameter vector with prices in units of 100 in the estimation
-           problem (R2_DESIGN=heavy100, T = 5,000), all q from results/qsens_heavy100_alg1 (grid_qsens_heavy100.json).
+Case II of Figure EC.1 (sparse parameters) is produced by sparse_r2.py and plot_qsens_sparse_r2.py.
 
-For each case and q: AMLE-MOSEK at its best eta0 (minimum mean final regret) and AMLE-PGD at its representative
+For each q: AMLE-MOSEK at its best eta0 (minimum mean final regret) and AMLE-PGD at its representative
 configuration (at its best eta0, the largest eps0 whose mean final regret is within 1% of its minimum), as in
 Table 2.
 
@@ -40,10 +39,9 @@ Q_COLOR = {4.0: "#2a78d6", 2.0: "#eb6834", Q_LOG: "#1baf7a"}        # validated 
 M_STYLE = {"MOSEK": dict(ls="--", marker="s"), "PGD": dict(ls="-", marker="o")}
 CASES = [
     ("I", "(a) Case I: Section 5.1 design (dense parameters)", ["dense_alg1", "qsens_alg1", "qsens_tol_alg1"]),
-    ("II", "(b) Case II: heavy-tailed features and sparse parameters", ["qsens_heavy100_alg1"]),
 ]
-COMMON_EPS_Q = 4.0   # dimension factor of eps_k shared by all q (Section 5.1)
-EPS_GRID = [3.0, 10.0, 30.0, 100.0, 300.0, 1000.0]
+COMMON_EPS_Q = float("inf")   # eps_k = eps0 sqrt(kappa |I_k|), shared by all q (Section 5.1)
+EPS_GRID = [1.0, 2.0, 3.0, 5.0, 10.0, 20.0, 30.0, 50.0, 100.0, 300.0]
 
 
 def _q_of(r) -> float:
@@ -56,14 +54,14 @@ def _eps_q_of(r) -> float:
 
 
 def collect(tags: list[str]) -> list[dict]:
-    """AMLE-MOSEK and AMLE-PGD rows at mid SNR; AMLE-PGD only at the common tolerance (eps_q = 4)."""
+    """AMLE-MOSEK and AMLE-PGD rows at mid SNR; AMLE-PGD only at the common tolerance (eps_q = inf)."""
     rows = []
     for tag in tags:
         root = os.path.join(HERE, "results", tag)
         if not os.path.isdir(root):
             continue
         rows += [r for r in P.aggregate(P.load(root)) if r["snr"] == SNR and r["method"] in ("MOSEK", "PGD")]
-    rows = [r for r in rows if r["method"] == "MOSEK" or abs(_eps_q_of(r) - COMMON_EPS_Q) < 1e-9]
+    rows = [r for r in rows if r["method"] == "MOSEK" or _eps_q_of(r) == COMMON_EPS_Q]
     for r in rows:
         r["q"] = _q_of(r)
     return rows

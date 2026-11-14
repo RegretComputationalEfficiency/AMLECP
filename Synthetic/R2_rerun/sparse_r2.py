@@ -10,7 +10,7 @@ configurable number of features d and horizon T:
 
 Methods (one refit at the end of each exploration block, as in run_r2.py):
   * dense : AMLE-PGD with a fixed q (parameter "q", default 4), p = q/(q - 1), eta_k = eta0 kappa^(1/q - 1/2)
-            sqrt(N), eps_k = eps0 kappa^(1/4) sqrt(N) (the rule of Section 5.1; the same eps_k for every q);
+            sqrt(N), eps_k = eps0 kappa^(1/4) sqrt(N) (the same eps_k for every q);
   * sparse: the configuration of Proposition A.10. q_k = 1 + log(kappa N), p_k = q_k/(q_k - 1), two passes of
             AMLE-PGD with eta_k(W) = c_eta sqrt(N rho_k)/W, first W = W0, then W = (2/3)||v^(0)||_1 started at
             v^(0) (W is never taken below W0), the same eps_k as dense;
@@ -145,6 +145,7 @@ def run_one(d: int, method: str, m: int, param: dict, k: int, T: int) -> dict:
     log = {key: [] for key in ("t", "N", "time", "iters", "stop", "G", "eps", "p", "eta", "W")}
     v_hat = None
     u_pow = None
+    L_prev = None                       # final backtracking constant of the previous fit (accelerated solver)
     eps_coef = float(param.get("eps", 3.0))
 
     for t in range(T):
@@ -173,19 +174,19 @@ def run_one(d: int, method: str, m: int, param: dict, k: int, T: int) -> dict:
                 q_reg = float(param.get("q", 4.0))          # default q = 4 (Section 5.1)
                 p_reg = q_reg / (q_reg - 1.0)
                 eta = float(param["eta"]) * kappa ** (1.0 / q_reg - 0.5) * math.sqrt(N)
-                res = S.amle_pgd(An, yn, eta, eps, v0, L, p_reg, PGD_MAX_ITER)
-                v_hat = res["v"]
+                res = S.solve_pgd(An, yn, eta, eps, v0, L, p_reg, PGD_MAX_ITER, L_prev)
+                v_hat, L_prev = res["v"], res["L"]
                 info.update(iters=res["iters"], stop=res["stop"], G=res["G"], eps=eps, p=p_reg, eta=eta)
             else:
                 rho = math.log(kappa * N)
                 p_reg = 1.0 + 1.0 / rho
                 c_eta = float(param["ceta"])
                 eta1 = c_eta * math.sqrt(N * rho) / W0
-                res1 = S.amle_pgd(An, yn, eta1, eps, v0, L, p_reg, PGD_MAX_ITER)
+                res1 = S.solve_pgd(An, yn, eta1, eps, v0, L, p_reg, PGD_MAX_ITER, L_prev)
                 W = max(2.0 / 3.0 * float(np.abs(res1["v"]).sum()), W0)
                 eta2 = c_eta * math.sqrt(N * rho) / W
-                res2 = S.amle_pgd(An, yn, eta2, eps, res1["v"], L, p_reg, PGD_MAX_ITER)
-                v_hat = res2["v"]
+                res2 = S.solve_pgd(An, yn, eta2, eps, res1["v"], L, p_reg, PGD_MAX_ITER, res1["L"])
+                v_hat, L_prev = res2["v"], res2["L"]
                 stop = res1["stop"] if res1["stop"] != "cert" else res2["stop"]
                 info.update(iters=res1["iters"] + res2["iters"], stop=stop, G=res2["G"], eps=eps, p=p_reg,
                             eta=eta2, W=W)
@@ -219,7 +220,7 @@ def run_one(d: int, method: str, m: int, param: dict, k: int, T: int) -> dict:
         "err_final": float(np.linalg.norm(v_hat - env.v_true)) if v_hat is not None else np.nan,
         "total_time": float(np.sum(log["time"])),
         "meta": json.dumps({"d": d, "kappa": kappa, "method": method, "m": m, "param": param, "k": k, "T": T,
-                            "sigma": sigma, "W0": W0}),
+                            "sigma": sigma, "W0": W0, "pgd_solver": S.PGD_SOLVER}),
     }
 
 

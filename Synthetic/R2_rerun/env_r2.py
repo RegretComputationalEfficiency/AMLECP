@@ -223,7 +223,7 @@ def eta_k(eta_coef: float, n_hist: int, q: float = Q_NORM) -> float:
 
 
 def eps_k(eps_coef: float, n_hist: int, q: float = Q_NORM) -> float:
-    """eps_k = eps0 * kappa^(1/2 - 1/q) * sqrt(|I_k|) (Theorem 1, eq. (7))."""
+    """eps_k = eps0 * kappa^(1/2 - 1/q) * sqrt(|I_k|); q = inf gives eps0 * sqrt(kappa |I_k|), eq. (7) of Theorem 1."""
     return float(eps_coef) * KAPPA ** (0.5 - 1.0 / q) * math.sqrt(n_hist)
 
 
