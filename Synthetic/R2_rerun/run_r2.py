@@ -117,7 +117,7 @@ def run_one(snr: str, method: str, param: dict, k_inst: int, T: int) -> dict:
     v_hat: np.ndarray | None = None
     net = None
     u_pow = None
-    L_prev = None                       # final backtracking constant of the previous fit (accelerated solver)
+    L_prev = None                       # final backtracking constant of the previous fit
     ada = S.AdaGradOnline(env.KAPPA, env.W_L1, lr=param["lr"]) if method == "AdaGrad" else None
     n_fit = 0
 

@@ -6,10 +6,10 @@ parameters (Figure EC.1, Appendix B) and of the solver timing of Figure 2, writt
 
 The results in the paper come from runs with the exploration schedule of Algorithm 1 (`env_r2.schedule`).
 The summaries for all hyperparameters are in `figures/dense_alg1/` (Table 2 and Figure 4), `figures/qsens_alg1/`
-(Case I of Figure EC.1) and `figures/qsens_sparse/` (Figure EC.1 and the sparse Case II with kappa = 730 and 201);
+(Case I of Figure EC.1) and `figures/qsens_sparse/` (Figure EC.1 and the sparse Case II with kappa = 730);
 Figure 2 and its summary are in `figures/mle_scaling/`. The raw per-trial outputs (`results/<tag>/`) are not
 included; the commands under Running regenerate them in `results/dense_alg1`, `results/qsens_alg1`,
-`results/qsens_tol_alg1`, `results/sparse_d729`, `results/sparse_d200` and `results/mle_scaling`.
+`results/qsens_tol_alg1`, `results/sparse_d729` and `results/mle_scaling`.
 
 Requirements (versions used): Python 3.12, numpy 1.26, scipy 1.11, cvxpy 1.5 with MOSEK 11 (license required)
 and CLARABEL 0.10, PyTorch 2.13 (SPO+), matplotlib 3.9.
@@ -30,10 +30,10 @@ and CLARABEL 0.10, PyTorch 2.13 (SPO+), matplotlib 3.9.
 | `grid_qsens.json`, `plot_qsens_r2.py` | Sensitivity to q (Case I of Figure EC.1; `plot_qsens_r2.py` also provides panel (a) of `plot_qsens_sparse_r2.py`): q in {2, 1 + log kappa} at mid SNR in the dense design (results/qsens_alg1; q = 4 is taken from results/dense_alg1); the parameter `q` of a configuration sets p = q/(q-1) and the dimension factors of eta_k and eps_k, while the exploration schedule of Section 5.1 is kept for every q |
 | `grid_qsens_tol.json` | AMLE-PGD for q = 2 and 1 + log kappa in Case I of Figure EC.1 (results/qsens_tol_alg1): every q uses the tolerance of Section 5.1, eps_k = eps0 sqrt(kappa \|I_k\|) as in eq. (7) (parameter `eps_q` = inf), with eps0 in {1, 2, 3, 5, 10, 20, 30, 50, 100, 300}, so that AMLE-PGD is compared at the same accuracy; q = 4 and AMLE-MOSEK are reused from results/dense_alg1 and results/qsens_alg1 |
 | `grid_dense_adagrad.json` | AdaGrad lr in {0.316, 3.16, 31.6, 100} for the dense design (lr = 10 was best at high SNR, the edge of the decade grid) |
-| `queue_apg.sh` | Run queue of the AMLE-PGD runs of the paper (results/dense_alg1, results/qsens_tol_alg1 and the AMLE-PGD methods of results/sparse_d729) |
+| `queue_pgd.sh` | Run queue of the AMLE-PGD runs of the paper (results/dense_alg1, results/qsens_tol_alg1 and the AMLE-PGD methods of results/sparse_d729) |
 | `queue_qsens_alg1.sh` | Run queue of the q-sensitivity runs of Case I of Figure EC.1 (results/qsens_alg1, results/qsens_tol_alg1) |
 | `sparse_r2.py` | Sparse Case II of Figure EC.1 and Appendix B (Appendix A.5, Proposition A.10): data of the `heavy100` design with d features, T = 50,000 and the Algorithm 1 schedule with m_0 = m_k = m; methods `dense` (AMLE-PGD with a fixed q, parameter `q`, default 4), `sparse` (AMLE-PGD with p_k = 1 + 1/log(kappa \|I_k\|) and the two-pass eta_k(W) = c_eta sqrt(\|I_k\| rho_k)/W of Appendix A.5) and `lasso` (ILQX solved by MOSEK); one job = (method, m, hyper-parameter, trial k) -> one `.npz` |
-| `grid_sparse_d729_m27.json`, `grid_sparse_d729_m27_qsens.json`, `grid_sparse_d729_m3.json`, `grid_sparse_d729_m3_qsens.json`, `grid_sparse_d729_m3_qsens_ext.json`, `grid_sparse_d200_m14.json`, `grid_sparse_d200_m3.json`, `queue_sparse_ec1.sh` | Grids (three values per method) and run queue of the sparse Case II: kappa = 730 with m = 27 (q = 4, p_k, ILQX; q = 2 and 1 + log kappa in `_qsens`) and m = 3, kappa = 201 with m = 14 and m = 3 (q = 4, p_k, ILQX) |
+| `grid_sparse_d729_m27.json`, `grid_sparse_d729_m27_qsens.json`, `grid_sparse_d729_m3.json`, `grid_sparse_d729_m3_qsens.json`, `grid_sparse_d729_m3_qsens_ext.json`, `queue_sparse_ec1.sh` | Grids (three values per method) and run queue of the sparse Case II: kappa = 730 with m = 27 (q = 4, p_k, ILQX; q = 2 and 1 + log kappa in `_qsens`) and m = 3 (q = 4, p_k, ILQX; q = 2 and 1 + log kappa in `_m3_qsens` and `_m3_qsens_ext`) |
 | `summarize_sparse_r2.py`, `plot_qsens_sparse_r2.py` | Summaries for all hyperparameters (`results/<tag>/summary.csv`, copied to `figures/qsens_sparse/summary_<tag>.csv`) and Figure EC.1: (a) Case I, (b) Case II with m_k = 27, (c) Case II with m_k = 3, each at the hyper-parameter with the minimum mean final regret (`figures/qsens_sparse`) |
 | `mle_scaling_r2.py` | Figure 2: time of one exact solve of the AMLE-MOSEK problem by MOSEK (one thread, 10 data sets per point) for n = 2^4, ..., 2^15 observations with kappa_x = 150 and for kappa_x = 2^2, ..., 2^12 features with n = 5,000; log-log fits over the upper half of each range (results/mle_scaling, figures/mle_scaling) |
 
@@ -49,7 +49,7 @@ The paper uses `dense` (Section 5.1 and Case I of Figure EC.1) and the `heavy100
 | `base` | R1 parameters: approximately sparse (96 of 729 entries in [1, 2] carry 99.98% of the squared l2 norm; the rest in [0.001, 0.015]) | as below |
 | `heavy100` | as `heavy`, with the price column of the estimation problem divided by 100 | as `heavy` |
 | `heavy` | Case II of the q-sensitivity study: sparse theta0 = (50, 20, 0.3, 0.2, 0.1, 0, ...), theta1 = 0.1; heavy-tailed features (R1 sampler `l4_heavy_tail_sample`: N(0, 0.1^2) coordinates shifted by 0.3, a collinear pair whose second coordinate jumps by +-U(5, 10) with probability 0.05); prices on [0, E[theta0'x]/theta1] = [0, 211.8] (501 / 11 points); T = 5,000 | sigma calibrated as in R1 (SNR = 1: sigma = 3.36) |
-| `sparse_r2.Env(d)` (`results/sparse_d729`, `results/sparse_d200`) | as `heavy100`, with d in {729, 200} features (kappa = d + 1); s = 6 nonzero entries including the price coefficient (10 in the estimation units) | T = 50,000; m_0 = m_k = m in {floor(sqrt(kappa)), 3}; SNR = 1 calibrated per d |
+| `sparse_r2.Env(d)` (`results/sparse_d729`) | as `heavy100`, with d = 729 features (kappa = 730); s = 6 nonzero entries including the price coefficient (10 in the estimation units) | T = 50,000; m_0 = m_k = m in {27, 3}; SNR = 1 |
 | `dense` (`results/dense_alg1`) | i.i.d. Gaussian entries with the mean and standard deviation of the R1 vector (seed 777): same sum, same l2 norm, hence the same mean intercept, spread of theta0^T x and sigma at each SNR; 245 negative entries | identical to `base` |
 
 Grids of the dense design (`grid_dense.json`): AMLE-MOSEK and ILQX use five half-decade values (ratio sqrt(10))
@@ -105,9 +105,9 @@ caffeinate -i bash queue_qsens_alg1.sh              # q-sensitivity runs of Figu
 python3 check_timing_r2.py --tag dense_alg1          # timing sanity check
 R2_DESIGN=dense python3 plot_r2.py --tag dense_alg1  # Table 2, Figure 4 and results for all hyperparameters (figures/dense_alg1)
 python3 plot_qsens_r2.py                             # Case I summaries of Figure EC.1 (figures/qsens_alg1)
-caffeinate -i bash queue_apg.sh                      # AMLE-PGD runs of the paper (existing outputs are skipped)
-caffeinate -i bash queue_sparse_ec1.sh               # sparse Case II (results/sparse_d729, results/sparse_d200)
-python3 summarize_sparse_r2.py --tag sparse_d729     # summaries for all hyperparameters (also --tag sparse_d200)
+caffeinate -i bash queue_pgd.sh                      # AMLE-PGD runs of the paper (existing outputs are skipped)
+caffeinate -i bash queue_sparse_ec1.sh               # sparse Case II (results/sparse_d729)
+python3 summarize_sparse_r2.py --tag sparse_d729     # summaries for all hyperparameters
 python3 plot_qsens_sparse_r2.py                      # Figure EC.1 (figures/qsens_sparse)
 caffeinate -i python3 mle_scaling_r2.py --threads 1  # Figure 2 (figures/mle_scaling; about 15 min)
 ```

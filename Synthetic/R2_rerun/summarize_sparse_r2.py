@@ -1,6 +1,6 @@
 """Summary of the sparse-parameter runs of sparse_r2.py.
 
-    python3 summarize_sparse_r2.py --tag sparse_d200
+    python3 summarize_sparse_r2.py --tag sparse_d729
 
 For every (method, m, hyper-parameter): number of trials, mean (and standard error) of the final regret, of the
 exploitation regret and of the final estimation error ||v_hat - v||_2, mean optimization time, mean PGD

@@ -1,11 +1,10 @@
 #!/bin/bash
-# AMLE-PGD runs of Section 5.1 and Appendix B (solver solvers_r2.solve_pgd, R2_PGD=apg): results/dense_alg1
+# AMLE-PGD runs of Section 5.1 and Appendix B (solver solvers_r2.solve_pgd): results/dense_alg1
 # (Table 2, Figure 4), results/qsens_tol_alg1 (Figure EC.1(a)) and the methods dense and sparse of
 # results/sparse_d729 (Table 3, Figure EC.1(b)-(c)). AMLE-MOSEK, ILQX, SPO+ and AdaGrad are run by the commands
-# in README.md. Run with: caffeinate -i bash queue_apg.sh   (existing outputs are skipped)
+# in README.md. Run with: caffeinate -i bash queue_pgd.sh   (existing outputs are skipped)
 cd "$(dirname "$0")" || exit 1
 mkdir -p logs
-export R2_PGD=apg
 K="1 2 3 4 5 6 7 8 9 10"
 python3 run_r2.py --design dense --tag dense_alg1 --snr low mid high --methods PGD --grid main \
     --grid-json grid_dense.json --workers 9 > logs/dense_alg1_pgd_rerun.log 2>&1

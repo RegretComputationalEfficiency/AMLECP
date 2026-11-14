@@ -22,7 +22,7 @@ Each job (method, m, hyper-parameter, trial k) writes one .npz with per-period p
 per-refit logs.  Existing outputs are skipped.
 
     python3 sparse_r2.py --d 729 --T 50000 --tag sparse_d729 --grid-json grid_sparse_d729_m27.json --m 27 --k 1 2
-    bash queue_sparse_ec1.sh            # all runs of Figure EC.1(b)-(c) and Appendix B (kappa = 730 and 201)
+    bash queue_sparse_ec1.sh            # all runs of Figure EC.1(b)-(c) and Appendix B (kappa = 730)
 """
 
 from __future__ import annotations
@@ -145,7 +145,7 @@ def run_one(d: int, method: str, m: int, param: dict, k: int, T: int) -> dict:
     log = {key: [] for key in ("t", "N", "time", "iters", "stop", "G", "eps", "p", "eta", "W")}
     v_hat = None
     u_pow = None
-    L_prev = None                       # final backtracking constant of the previous fit (accelerated solver)
+    L_prev = None                       # final backtracking constant of the previous fit
     eps_coef = float(param.get("eps", 3.0))
 
     for t in range(T):
