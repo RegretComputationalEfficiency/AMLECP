@@ -50,7 +50,7 @@ Selection rules (plot_r2.py)
     1% of the minimum.
 
 Outputs of ``R2_DESIGN=dense python3 plot_r2.py --tag dense_alg1`` (figures/dense_alg1/; the repository keeps
-fig_best_regret.pdf, fig_regret_time.pdf, summary_best.csv and table_regret_time.tex)
+fig_best_regret.pdf, fig_regret_time.pdf, summary_all.csv, summary_best.csv and table_regret_time.tex)
   fig_best_regret.pdf, fig_regret_time.pdf   Figure 4
   fig_all_params_final.pdf          final regret of every method and hyperparameter (mean, 95% CI)
   fig_all_params_curves_pgd.pdf     regret curves of AMLE-PGD for every eps0 at three values of eta0

@@ -6,10 +6,11 @@ parameters (Figure EC.1, Appendix B) and of the solver timing of Figure 2, writt
 
 The results in the paper come from runs with the exploration schedule of Algorithm 1 (`env_r2.schedule`).
 The repository keeps the figures of the paper and the results behind them: `figures/mle_scaling/` (Figure 2
-and its summary), `figures/dense_alg1/` (Figure 4; Table 2 in `table_regret_time.tex` and `summary_best.csv`),
+and its summary), `figures/dense_alg1/` (Figure 4; Table 2 in `table_regret_time.tex` and `summary_best.csv`; every
+hyperparameter of Section 5.1, including the paths of Figure 4, in `summary_all.csv`),
 `figures/qsens_sparse/` (Figure EC.1; Table 3 and panels (b)-(c) in `summary_sparse_case2.csv`) and
 `figures/qsens_alg1/summary_q_sensitivity.csv` (Case I of Figure EC.1). The raw per-trial outputs
-(`results/<tag>/`) and the figures and summaries for all hyperparameters are not included; the commands under Running regenerate them in `results/dense_alg1`, `results/qsens_alg1`,
+(`results/<tag>/`) and the other figures and summaries for all hyperparameters are not included; the commands under Running regenerate them in `results/dense_alg1`, `results/qsens_alg1`,
 `results/qsens_tol_alg1`, `results/sparse_d729` and `results/mle_scaling`.
 
 Requirements (versions used): Python 3.12, numpy 1.26, scipy 1.11, cvxpy 1.5 with MOSEK 11 (license required)
