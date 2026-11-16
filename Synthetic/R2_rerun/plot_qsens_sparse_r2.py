@@ -9,7 +9,10 @@
              AMLE-PGD with fixed q in {2, 4, 1 + log kappa} (dense eta scaling), AMLE-PGD with the exponent
              p_k = 1 + 1/log(kappa |I_k|) and the two-pass eta_k(W) of Appendix A.5, and ILQX (MOSEK).
 (c) Case II: the same with m_0 = m_k = 3 = ceil(sqrt(s)), s = 6.
-For every configuration the hyper-parameter with the minimum mean final regret over 10 trials is shown.
+Tolerances: m_k = 27 (s unknown) uses eps_k = eps0 sqrt(kappa |I_k|), m_k = 3 (s known) uses eps_k = eps0 sqrt(s |I_k|)
+(runs with param epsd = 2 and 1 of sparse_r2.py). Selection as in Section 5.1: the (eta0 or c_eta, eps0) with the
+minimum mean final regret over 10 trials, then on that eta0 (c_eta) the largest eps0 whose mean final regret is
+within 1% of the minimum. ILQX: lambda0 with the minimum mean final regret.
 Output: figures/qsens_sparse/fig_q_sensitivity_sparse.pdf and summary_sparse_case2.csv.
 """
 
@@ -45,9 +48,12 @@ def series_of(method: str, param: dict) -> str:
     return {2.0: "q2", 4.0: "q4"}.get(round(q, 6), "qlog" if abs(q - Q_LOG) < 1e-6 else None)
 
 
+EPSD = {27: 2, 3: 1}   # tolerance form per m (sparse_r2.py param "epsd")
+
+
 def load_case2(m: int) -> dict:
-    """series -> dict(param, K, curve_mean, curve_se, final list, time_mean) at the best parameter."""
-    best = {}
+    """series -> dict(param, K, curve_mean, curve_se, final list, time_mean) at the selected parameter."""
+    rows = {}
     for cfg in glob.glob(os.path.join(BASE, "*_m{}".format(m), "*")):
         files = sorted(f for f in glob.glob(os.path.join(cfg, "k*.npz")) if not f.endswith(".tmp.npz"))
         if len(files) < 10:
@@ -60,14 +66,22 @@ def load_case2(m: int) -> dict:
             curves.append(np.cumsum(r["oracle"] - r["rev_exp"]))
             times.append(float(r["total_time"]))
         s = series_of(method, param)
-        if s is None:
+        if s is None or (s != "lasso" and int(param.get("epsd", 0)) != EPSD[m]):
             continue
         C = np.vstack(curves)
         row = {"param": param, "method": method, "K": C.shape[0], "curve_mean": C.mean(0),
                "curve_se": C.std(0, ddof=1) / math.sqrt(C.shape[0]), "final": C[:, -1],
                "time_mean": float(np.mean(times))}
-        if s not in best or row["curve_mean"][-1] < best[s]["curve_mean"][-1]:
-            best[s] = row
+        rows.setdefault(s, []).append(row)
+    best = {}
+    for s, R in rows.items():
+        b = min(R, key=lambda r: r["curve_mean"][-1])
+        if s == "lasso":
+            best[s] = b
+            continue
+        key = "ceta" if s == "pk" else "eta"
+        cand = [r for r in R if r["param"][key] == b["param"][key] and r["curve_mean"][-1] <= 1.01 * b["curve_mean"][-1]]
+        best[s] = max(cand, key=lambda r: r["param"]["eps"])
     return best
 
 

@@ -166,7 +166,15 @@ def run_one(d: int, method: str, m: int, param: dict, k: int, T: int) -> dict:
         t0 = time.perf_counter()
         info = {"iters": 0, "stop": "", "G": np.nan, "eps": np.nan, "p": np.nan, "eta": np.nan, "W": np.nan}
         if method in ("dense", "sparse"):
-            eps = eps_coef * kappa ** 0.25 * math.sqrt(N)
+            # tolerance: param "epsd" = 1 gives eps0 sqrt(s N) (Theorem 2), 2 gives eps0 sqrt(kappa N) (eq. (7));
+            # without it, the earlier eps0 kappa^(1/4) sqrt(N)
+            epsd = int(param.get("epsd", 0))
+            if epsd == 1:
+                eps = eps_coef * math.sqrt(S_NONZERO * N)
+            elif epsd == 2:
+                eps = eps_coef * math.sqrt(kappa * N)
+            else:
+                eps = eps_coef * kappa ** 0.25 * math.sqrt(N)
             lam_max, u_pow = S.power_iteration(An, u_pow)
             L = 1.02 * lam_max
             v0 = np.full(kappa, PGD_INIT) if v_hat is None else v_hat
@@ -222,6 +230,9 @@ def run_one(d: int, method: str, m: int, param: dict, k: int, T: int) -> dict:
         "meta": json.dumps({"d": d, "kappa": kappa, "method": method, "m": m, "param": param, "k": k, "T": T,
                             "sigma": sigma, "W0": W0, "pgd_solver": S.PGD_SOLVER}),
     }
+
+
+S_NONZERO = 6   # nonzero entries of (theta0, price coefficient)
 
 
 def param_str(param: dict) -> str:
