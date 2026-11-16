@@ -33,6 +33,9 @@ passenger-acceptance environment.
 | Feature engineering + simulator training | [`Simulator/`](Simulator/) | [Simulator/README.md](Simulator/README.md) |
 | December 2014 test + online algorithms | [`2014_data/`](2014_data/) | [2014_data/README.md](2014_data/README.md) |
 
+The definitions and summary statistics of the 20 features used in Section 5.2 of the revised paper are in
+[`feature_summary.md`](feature_summary.md).
+
 **Raw data is not redistributed.** You must download:
 
 - **Training:** [Kaggle — New York City Taxi Fare Prediction](https://www.kaggle.com/competitions/new-york-city-taxi-fare-prediction) (`train.csv`)
