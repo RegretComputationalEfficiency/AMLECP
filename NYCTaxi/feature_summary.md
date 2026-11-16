@@ -1,8 +1,7 @@
-# NYC taxi case study (Section 5.2): features and summary statistics
+# NYC taxi case study: features and summary statistics
 
-The 20 contextual features of the demand model in Section 5.2. Statistics are computed on the two million trips
-(December 2013 to November 2014, excluding the week of November 17, 2014) used to fit the simulator. Binary
-features show the share of 1 and 0.
+Statistics are computed on the two million trips (December 2013 to November 2014, excluding the week of
+November 17, 2014) used to fit the simulator (`run.py prepare`). Binary features show the share of 1 and 0.
 
 | # | Variable | Description | Summary statistics |
 |---|---|---|---|

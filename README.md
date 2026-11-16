@@ -10,7 +10,7 @@ ILQX, SPO+, AdaGrad-style updates) but differ in the data environment:
 | Subproject | Folder | What it covers |
 | --- | --- | --- |
 | **Synthetic benchmarks** | [`Synthetic/R2_rerun/`](Synthetic/R2_rerun/) | Linear demand: Section 5.1 (Table 2, Figure 4) across SNR levels, the time of the exact solver (Figure 2), and the sensitivity to `q` with dense and sparse parameters (Figure EC.1, Appendix B). |
-| **NYC taxi (real data)** | [`NYCTaxi/`](NYCTaxi/) | Kaggle-trained acceptance simulator + December 2014 NYC TLC out-of-sample online pricing tests. |
+| **NYC taxi (real data)** | [`NYCTaxi/`](NYCTaxi/) | Section 5.2 (Table 4, Figure 5): willingness-to-pay simulator fitted to NYC TLC trips, selection on a November 2014 week, timed tests on four December 2014 weeks, revenue lost to delay under two pricing rules. |
 
 The code of the first-round version (before the second-round revision) is kept at the tag
 [`round1`](https://github.com/RegretComputationalEfficiency/AMLECP/tree/round1).
@@ -25,20 +25,20 @@ The code of the first-round version (before the second-round revision) is kept a
 └──────────────────────────────────────────────────────────────────────────┘
 
 ┌──────────────────────────────────────────────────────────────────────────┐
-│  NYCTaxi/ — learned environment on NYC taxi fares                         │
+│  NYCTaxi/ — willingness-to-pay simulator on NYC TLC taxi trips           │
 ├──────────────────────────────────────────────────────────────────────────┤
-│  Simulator/   →  train β on Kaggle features (2013–2014)                  │
-│  2014_data/   →  December 2014 TLC test  →  PGD_ILQX + regret plots      │
+│  build/      →  clean TLC trips 2013-12 to 2014-12, 20 features          │
+│  formal.py   →  select (Nov 2014), timed tests (Dec 2014), replay        │
 └──────────────────────────────────────────────────────────────────────────┘
 ```
 
 ## Where to start
 
 - **Synthetic experiments, Figure 2, Section 5.1 and Figure EC.1:** [`Synthetic/R2_rerun/README.md`](Synthetic/R2_rerun/README.md)
-- **NYC taxi pipeline (train + December test):** [`NYCTaxi/README.md`](NYCTaxi/README.md)
+- **NYC taxi case study, Section 5.2:** [`NYCTaxi/README.md`](NYCTaxi/README.md)
 
 Each subfolder documents its own dependencies (MOSEK, Gurobi/PyEPO where applicable),
-data downloads, and run commands. Raw TLC/Kaggle data are **not** redistributed; see
+data downloads, and run commands. Raw TLC trip records and weather data are **not** redistributed; see
 the NYCTaxi README for download links.
 
 ## Quick start (pointers)
@@ -47,11 +47,8 @@ the NYCTaxi README for download links.
 # Synthetic experiments (Figure 2, Section 5.1 and Figure EC.1); requirements and run commands in Synthetic/R2_rerun/README.md
 (cd Synthetic/R2_rerun && python3 config_r2.py)   # settings, grids and result files of Section 5.1
 
-# NYC taxi December test (uses pre-trained simulator artifacts when available)
-pip install -r NYCTaxi/Simulator/requirements.txt
-pip install -r NYCTaxi/2014_data/requirements.txt
-export TEST_DATA_PATH=NYCTaxi/2014_data/data/2014_december_test_arrivals.csv
-python NYCTaxi/2014_data/PGD_ILQX.py
+# NYC taxi case study (Section 5.2); data preparation and run commands in NYCTaxi/README.md
+(cd NYCTaxi && python3 formal_report.py)   # Table 4 and Figure 5 from the saved results in formal.csv
 ```
 
 For full data-prep and retraining workflows, follow the README in the relevant subfolder.

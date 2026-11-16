@@ -1,63 +1,26 @@
-# --- macOS junk ---
+# --- macOS / Python ---
 .DS_Store
-.AppleDouble
-.LSOverride
-._*
-
-# --- Python ---
 __pycache__/
 *.py[cod]
-*$py.class
-*.egg-info/
-.eggs/
-build/
-dist/
-.ipynb_checkpoints/
 
-# Virtual environments
-.venv/
-venv/
-env/
+# --- Data that is not redistributed (see README.md) ---
+# NYC TLC trip records and the tables built from them (the code in build/ is kept;
+# the root .gitignore ignores every build/ folder)
+!build/
+build/data/
+# Open-Meteo daily weather and NYC TLC taxi zones
+Simulator/*
+!Simulator/README.md
 
-# --- Kaggle raw data: NOT redistributable ---
-# Download "New York City Taxi Fare Prediction" train data from Kaggle
-# (see Simulator/README.md). Do not commit it to the repo.
-Simulator/train.csv
-Simulator/train.csv.zip
-Simulator/train.zip
-Simulator/test.csv
+# --- Outputs of exploratory runs of run.py, single_update.py and online.py ---
+results/*
+!results/formal/
+results/formal/*/selection_other.csv
+results/formal/*/selected_*.json
+formal_smoke.csv
 
-# --- Open-Meteo weather: download yourself (see Simulator/README.md) ---
-Simulator/daily_weather_data_2009_2015.csv
-
-# --- NYC TLC taxi zones: download yourself (see Simulator/README.md) ---
-Simulator/taxi_zones.zip
-Simulator/taxi_zones/
-Simulator/taxi_zones.shp
-Simulator/taxi_zones.*
-
-# --- Large generated / processed datasets ---
-Simulator/*Trained_nyc_taxi_data_with_directionality.csv
-Simulator/**/augmented_training_data.csv
-
-# --- NYC TLC test data (December 2014): NOT redistributable ---
-# Download from TLC trip-record page (see 2014_data/README.md).
-2014_data/**/*.parquet
-2014_data/**/*tripdata*.csv
-2014_data/data/*.csv
-2014_data/TestData/*.csv
-2014_data/TestData/Dec/
-2014_data/TestData/*.tmp.csv
-
-# Timestamp de-duplication script — intentionally not distributed (see README)
-2014_data/spread_same_timestamp_pickup_time.py
-
-# PGD_ILQX test results + plot PDFs — not uploaded (keep directory placeholder)
-2014_data/TestData/sim_output/**
-!2014_data/TestData/sim_output/.gitkeep
-
-# --- Local caches ---
-cache/
-
-# --- Editor ---
-.vscode/
+# --- Figures: only the panels of Figure 5 are kept (formal_report.py draws all scenarios) ---
+figures/*
+!figures/formal_pressure_wtp16_1.pdf
+!figures/formal_pressure_wtp16_2.pdf
+!figures/formal_pressure_wtp16_3.pdf
