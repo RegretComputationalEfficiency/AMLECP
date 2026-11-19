@@ -1,12 +1,24 @@
-"""Formal Case Study II experiment (design recorded in protocol.txt).
+"""Formal HVFHV case study with kappa = 729 (2026-11-17), copied from ../nyc_hvfhv_k729/formal.py.
 
-Hyperparameters are selected on the validation week by revenue with instantaneous
-updates. The selected policies are then run and timed on four December weeks, and the
-replay of online.py (one worker, newest waiting snapshot, newest finished estimate)
-gives timeliness and the revenue lost to delay at every request rate.
+Schedules by method: AMLE-PGD and AMLE-MOSEK use the schedule of Algorithm 1 (m0 = 410, blocks [k^2, k^2+27]).
+ILQX uses the schedule of Ban et al. (2025): block L = 1, 2, ... runs two price experiments at requests
+ceil(L^2/s) and ceil(L^2/s)+1 (1-based, coinciding requests counted once) and re-solves after the block,
+with s = 41 nonzero coefficients of the truth. APGD selection rows were copied from ../nyc_hvfhv_k729
+(same streams and code); its ILQX rows, on Algorithm 1's schedule, were not.
 
-    python formal.py select SCENARIO    validation week, several processes, times unused
-    python formal.py test SCENARIO      December weeks, one run after another, timed
+The 20 contextual features are followed by su.EXTRA = 344 independent standard normal features, drawn once
+per (split, day) so that every policy and seed sees the same contexts. Their true coefficients are zero, in
+the base part and in the price part, so the simulator of the 20 features is unchanged.
+
+Validation: first 200,000 requests of Monday 2026-09-07, three seeds (APGD and ILQX).
+Test: first 200,000 requests of the other three Mondays of September 2026, three seeds each.
+
+Hyperparameters are selected on the validation Monday by revenue with instantaneous updates. The selected
+policies are then run and timed on the test Mondays, and the replay of online.py gives timeliness and the
+revenue lost to delay at every request rate.
+
+    python formal.py select SCENARIO    validation Monday, several processes, times unused
+    python formal.py test SCENARIO      test Mondays, one run after another, timed
     python formal.py evaluate           replay every saved test run, write formal.csv
 """
 import run  # sets the single-thread environment before numpy is imported
@@ -26,16 +38,36 @@ from replay import schedule, index_AB, best_price, prob, _policy_prices
 SMOKE = bool(os.environ.get('FORMAL_SMOKE'))            # small end-to-end check of the pipeline
 T = 20_000 if SMOKE else 200_000
 M0, MK = 410, 28
-VAL = ('val', '2014-11-17')
-TEST = [('test', d) for d in ('2014-12-01', '2014-12-08', '2014-12-15', '2014-12-22')][:1 if SMOKE else 4]
+S_BAN = 41                                                       # nonzero coefficients of the truth
+VAL_DAYS = ('2026-09-07',)                                       # one validation Monday (test-month cache)
+VAL = ('test', VAL_DAYS[0])
+TEST = [('test', d) for d in ('2026-09-14', '2026-09-21', '2026-09-28')][:1 if SMOKE else 3]
 SEEDS = (1,) if SMOKE else (1, 2, 3)                              # test runs, and ILQX selection
-SELECT_SEEDS = (1,) if SMOKE else tuple(range(1, 11))             # APGD selection on the validation week
+SELECT_SEEDS = (1,) if SMOKE else (1, 2, 3)                      # APGD selection: 1 Monday x 3 seeds
+ILQX_SELECT = (1,) if SMOKE else (1, 2, 3)                       # ILQX selection: 1 Monday x 3 seeds
 RATES = (10, 30, 100, 300, 1_000, 3_000, 10_000, 30_000, 100_000)   # requests per second, after 'native'
 WINDOWS = dict(first5=.05, first20=.2, all=1.)
 LADDER = [m * 10. ** e for e in range(-6, 2) for m in (1, 3)]       # 1-3-10 grid for extensions
-GRID = dict(eta=[.001, .002, .003, .005, .01], eps=[3e-4, .001, .002, .003, .005, .01], lam=[.003, .01, .03, .1])
+GRID = dict(eta=[.003, .01, .03, .1, .3], eps=[3e-4, .001, .002, .003, .005, .01], lam=[.003, .01, .03, .1])
 IDLE = 5.                                                            # one-minute load allowed for timed runs
 OUT = run.RESULTS / ('formal_smoke' if SMOKE else 'formal')
+
+
+def ban_schedule(T, s=S_BAN):
+    explore = np.zeros(T, bool); trig = []; L = 1
+    while True:
+        a = -(-L * L // s)                      # ceil(L^2/s), 1-based request number
+        if a + 1 > T:
+            break
+        explore[a - 1] = explore[a] = True
+        if not trig or trig[-1] != a + 1:
+            trig.append(a + 1)
+        L += 1
+    return np.flatnonzero(explore), np.asarray(trig, dtype=np.int64)
+
+
+def plan(cfg):
+    return 'ban' if cfg['family'] == 'ilqx' else 'alg1'
 
 
 def log(*a):
@@ -43,7 +75,7 @@ def log(*a):
 
 
 @functools.lru_cache(maxsize=2)
-def stream(scenario, split, day, seed):
+def stream(scenario, split, day, seed, sched='alg1'):
     src = run.SOURCE / 'data/processed/cache'
     t = np.load(src / f'{split}_t_ns.npy', mmap_mode='r')
     lo = int(np.searchsorted(t, np.datetime64(day, 'ns').astype('int64')))
@@ -51,14 +83,23 @@ def stream(scenario, split, day, seed):
     x = np.array(np.load(src / f'{split}_X.npy', mmap_mode='r')[lo:lo + T], dtype=float)
     x[:, 16] = run.daylight(tt)
     z = x / np.load(run.DATA / 'scale.npy')
+    g = np.random.default_rng([20261117, int(day.replace('-', '')), 0 if split == 'val' else 1]).standard_normal((T, su.EXTRA))
+    z = np.column_stack((z, g))
     fare = np.array(np.load(src / f'{split}_fare.npy', mmap_mode='r')[lo:lo + T], dtype=float)
-    true = np.load(run.DATA / f'{scenario}.npy')
-    idx, trig = schedule(T, M0, MK)
+    t20 = np.load(run.DATA / f'{scenario}.npy'); d0 = (len(t20) - 1) // 2; zero = np.zeros(su.EXTRA)
+    true = np.r_[t20[:1 + d0], zero, t20[1 + d0:], zero]
+    assert len(true) == su.KAPPA
+    idx, trig = ban_schedule(T) if sched == 'ban' else schedule(T, M0, MK)
     rng = np.random.default_rng([20261114, int(day.replace('-', '')), seed])
-    price = rng.choice([10., 15., 20., 25., 30.], len(idx))
+    price = rng.choice(run.EXPLORE_PRICES, len(idx))
     phi = run.design(z[idx], price)
     y = (rng.random(len(idx)) < expit(phi @ true)).astype(float)
+    # L_max = sum(phi**2)/4 over the first n rows, from a running sum (float32 storage was tried on
+    # 2026-11-17 and dropped: its rounding raised the APGD iteration count)
+    phi32 = phi
+    sq = np.r_[0., np.cumsum(np.einsum('ij,ij->i', phi, phi))]
     s = dict(T=T, z=z, clock=(tt - tt[0]) / 1e9, fare=fare, true=true, idx=idx, trig=trig, price=price, phi=phi,
+             phi32=phi32, sq=sq,
              y=y, n_at=np.searchsorted(idx, trig - 1, side='right'))
     # quantities of the replay that do not depend on the policy
     A, B = index_AB(z, true); every = np.arange(T)
@@ -71,7 +112,7 @@ def stream(scenario, split, day, seed):
     s.update(earn=earn, explore=explore, ex=ex, common=common, first=first, due=due,
              oracle=earn(every, best_price(A, B)), tsp=earn(every, fare),
              target=np.searchsorted(trig, ex + 1, side='right') - 1,
-             wander=earn(every, np.random.default_rng([7, seed]).choice([10., 15., 20., 25., 30.], T)))
+             wander=earn(every, np.random.default_rng([7, seed]).choice(run.EXPLORE_PRICES, T)))
     return s
 
 
@@ -81,11 +122,11 @@ def levels(s):
     return [('native', 1.)] + [(str(r), r / native) for r in RATES]
 
 
-def update(cfg, phi, y, warm, t):
+def update(cfg, phi, y, warm, t, L_max=None):
     """One update. A MOSEK solve of the AMLE problem that is not certified optimal is redone by the
     accelerated proximal gradient method at high precision (repaired). Returns theta, L, repaired."""
     try:
-        th, info = su.solve(cfg, phi, y, warm, t)
+        th, info = su.solve(cfg, phi, y, warm, t, L_max)
     except RuntimeError:
         th, info = None, dict(ok=False, L=0.)
     if info['ok']:
@@ -102,7 +143,10 @@ def chain(s, cfg):
     warm = None; thetas = []; secs = []; repaired = 0; peak = os.getloadavg()[0]
     for j, (n, t) in enumerate(zip(s['n_at'], s['trig'])):
         t0 = time.perf_counter()
-        th, L, fixed = update(cfg, s['phi'][:n], s['y'][:n], warm, int(t))
+        if cfg['family'] == 'apgd':
+            th, L, fixed = update(cfg, s['phi32'][:n], s['y'][:n], warm, int(t), s['sq'][n] / 4)
+        else:
+            th, L, fixed = update(cfg, s['phi'][:n], s['y'][:n], warm, int(t))
         secs.append(time.perf_counter() - t0); thetas.append(th); repaired += fixed
         warm = (th, L) if cfg['family'] == 'apgd' else None
         if j % 20 == 0:
@@ -112,14 +156,14 @@ def chain(s, cfg):
 
 def revenue(s, thetas, est):
     r = s['common'].copy()
-    r[s['ex']] = s['earn'](s['ex'], _policy_prices(s['z'][s['ex']], thetas, est, 10., 2.5, 70.))
+    r[s['ex']] = s['earn'](s['ex'], _policy_prices(s['z'][s['ex']], thetas, est, run.PRICE_UNIT, run.PRICE_LO, run.PRICE_HI))
     return r
 
 
 # ------------------------------------------------------------------ selection on the validation week
 def score(task):
     scenario, cfg, seed = task
-    s = stream(scenario, *VAL, seed)
+    s = stream(scenario, VAL[0], VAL_DAYS[(seed - 1) // 3], (seed - 1) % 3 + 1, plan(cfg))   # seed id -> (Monday, seed)
     thetas = chain(s, cfg)[0]
     return dict(cfg, seed=seed, share=revenue(s, thetas, s['target']).sum() / s['oracle'].sum())
 
@@ -146,8 +190,8 @@ def decide(table):
     regret = (1 - a.mean())[a.size() == len(SELECT_SEEDS)]
     first = regret.xs(r6(min(GRID['eps'])), level='eps0')
     eta = first.idxmin(); path = regret.xs(eta, level='reg')
-    l = t[(t.family == 'ilqx') & t.seed.isin(SEEDS)].groupby('reg').share
-    lam = (1 - l.mean())[l.size() == len(SEEDS)]
+    l = t[(t.family == 'ilqx') & t.seed.isin(ILQX_SELECT)].groupby('reg').share
+    lam = (1 - l.mean())[l.size() == len(ILQX_SELECT)]
     return dict(eta=float(eta), eps=float(path[path <= 1.01 * path.min()].index.max()), lam=float(lam.idxmin()),
                 etas=sorted(float(v) for v in first.index), epss=sorted(float(v) for v in path.index),
                 lams=sorted(float(v) for v in lam.index))
@@ -162,7 +206,7 @@ def select(scenario, workers=4):
     for _ in range(6):
         done = {(r.family, r6(r.reg), r6(r.eps0), r.seed) for r in table.itertuples()}
         tasks = [(scenario, dict(c, reg=r6(c['reg']), eps0=r6(c['eps0'])), sd) for c in todo
-                 for sd in (SELECT_SEEDS if c['family'] == 'apgd' else SEEDS)
+                 for sd in (SELECT_SEEDS if c['family'] == 'apgd' else ILQX_SELECT)
                  if (c['family'], r6(c['reg']), r6(c['eps0']), sd) not in done]
         if tasks:
             log('select', scenario, len(tasks), 'runs')
@@ -225,7 +269,10 @@ def live(s, cfg, secs, folder):
             begin = max(free, trig_time[nxt])
             j = int(np.searchsorted(trig_time, begin, side='right')) - 1
             n = s['n_at'][j]; t0 = time.perf_counter()
-            th, L, _ = update(cfg, s['phi'][:n], s['y'][:n], warm, None)
+            if cfg['family'] == 'apgd':
+                th, L, _ = update(cfg, s['phi32'][:n], s['y'][:n], warm, None, s['sq'][n] / 4)
+            else:
+                th, L, _ = update(cfg, s['phi'][:n], s['y'][:n], warm, None)
             free = begin + time.perf_counter() - t0
             start.append(begin); finish.append(free); solved.append(j); thetas.append(th)
             warm = (th, L); nxt = j + 1
@@ -246,11 +293,12 @@ def archive(scenario):
 def test(scenario):
     archive(scenario)
     solvers.prox_half_sq_pnorm(np.ones(su.KAPPA), 1., su.Q)       # compile outside measurements
+    solvers.warm_up(su.KAPPA)
     for split, day in TEST:
         for seed in SEEDS:
             folder = OUT / scenario / day / f'seed{seed}'; (folder / 'live').mkdir(parents=True, exist_ok=True)
-            s = stream(scenario, split, day, seed)
             for cfg in methods(scenario):
+                s = stream(scenario, split, day, seed, plan(cfg))
                 out = folder / (tag(cfg) + '.npz')
                 try:
                     if not out.exists():
@@ -270,8 +318,8 @@ def evaluate():
     rows = []
     for file in sorted(OUT.glob('*/*/seed*/*.npz')):
         scenario, day, seed = file.parts[-4], file.parts[-3], int(file.parts[-2][4:])
-        split = 'val' if day == VAL[1] else 'test'
-        s = stream(scenario, split, day, seed); saved = np.load(file); cfg = json.loads(str(saved['cfg']))
+        split = VAL[0] if day == VAL[1] else 'test'
+        saved = np.load(file); cfg = json.loads(str(saved['cfg'])); s = stream(scenario, split, day, seed, plan(cfg))
         thetas, secs = saved['thetas'], saved['secs']; ex, target = s['ex'], s['target']
         instant = revenue(s, thetas, target)
         for name, factor in levels(s):
@@ -290,6 +338,13 @@ def evaluate():
             # finished, and with the recorded metered fare before that
             locked = deployed.copy(); late = np.zeros(T, bool); late[ex] = used != target
             locked[late] = s['tsp'][late]
+            # Algorithm 1 with the previous estimate: the estimate of an epoch is fixed at its first exploitation
+            # request, the estimate of the epoch if it is finished then, otherwise the newest finished one
+            # (normally that of the previous epoch), and kept for the whole epoch
+            pos0 = np.searchsorted(finish, clock[s['first']], side='right') - 1
+            at_start = np.where(pos0 >= 0, solved[np.maximum(pos0, 0)], -1)
+            held = at_start[target]
+            frozen = deployed.copy(); frozen[ex] = revenue(s, used_thetas, held)[ex]
             busy = np.zeros(T, bool)                             # worker computing when the request arrives
             busy[ex] = np.searchsorted(begin, clock[ex], side='right') - 1 > pos
             done = np.full(len(secs), np.inf); done[solved] = finish
@@ -303,6 +358,7 @@ def evaluate():
                                  fare=np.where(busy, s['tsp'], deployed)[:h].sum(),
                                  explore=np.where(busy, s['wander'], deployed)[:h].sum(),
                                  lost=np.where(busy, 0., deployed)[:h].sum(), lock=locked[:h].sum(),
+                                 freeze=frozen[:h].sum(), freeze_stale=np.mean((held != target)[m]),
                                  busy=busy[:h][~s['explore'][:h]].mean(),
                                  timely=timely[s['due'] & (s['trig'] <= h)].mean(),
                                  stale=np.mean((used != target)[m]), fallback=np.mean((used < 0)[m]),

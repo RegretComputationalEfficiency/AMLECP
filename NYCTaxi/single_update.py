@@ -38,7 +38,8 @@ EPS0 = dict(pgd=(.1, .03, .01, .003, .001, 3e-4, 1e-4),             # plain PGD 
             apgd=(.1, .03, .01, .003, .001, 3e-4, 1e-4, 1e-5, 1e-6))  # accelerated, to high precision
 LAM0 = (.03, .1, .3)
 REPEATS = 3             # timings of an update shorter than 0.3 s; the median is used
-KAPPA = 41
+EXTRA = 344             # added Gaussian context features with zero true coefficients
+KAPPA = 1 + 2 * (20 + EXTRA)   # 729
 Q = 4.
 
 
@@ -110,14 +111,17 @@ def lam_of(cfg, n, t=None):
     return cfg['reg'] * t ** .25 * np.sqrt(np.log(KAPPA) + np.log(t))
 
 
-def solve(cfg, phi, y, warm=None, t=None):
+def solve(cfg, phi, y, warm=None, t=None, L_max=None):
     """One update. warm = (theta, L) of the previous update of the same method.
-    t = request number of the trigger (ILQX only; default: the k^2 schedule's time for n)."""
+    t = request number of the trigger (ILQX only; default: the k^2 schedule's time for n).
+    L_max = sum(phi**2)/4 when it is known (formal.chain keeps a running sum).
+    APGD runs as solvers.amle_apgd_blas (same iterates as amle_apgd; loss and gradient share one exponential)."""
     n = len(y)
     if cfg['family'] in ('pgd', 'apgd'):
-        L_max = float(np.sum(phi ** 2)) / 4
+        if L_max is None:
+            L_max = float(np.sum(np.asarray(phi, dtype=np.float64) ** 2)) / 4
         th0, L0 = warm if warm else (np.zeros(KAPPA), L_max)
-        fun = solvers.amle_pgd if cfg['family'] == 'pgd' else solvers.amle_apgd
+        fun = solvers.amle_pgd if cfg['family'] == 'pgd' else solvers.amle_apgd_blas
         eps = cfg['eps0'] * np.sqrt(KAPPA * n)
         th, info = fun(phi, y, eta_of(cfg, n), eps, th0, L_max, L0, Q)
         return th, dict(L=info['L'], iters=info['iters'], ok=info['G'] <= eps * (1 + 1e-8))

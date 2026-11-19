@@ -1,12 +1,15 @@
-"""Build the cleaned trip tables from the raw TLC files.
+"""Build the cleaned request tables from the raw HVFHV files (2026-11-17).
 
 One feature definition and one cleaning rule for every split:
-  fit   : uniform sample of FIT_SAMPLE trips from FIT_MONTHS (simulator estimation)
-  val   : all trips in VAL_WINDOW, in arrival order
-  test  : all trips in TEST_WINDOW, in arrival order
-Pickup times are recorded in whole seconds. For the two streams, trips recorded in
-the same second receive independent uniform offsets within that second.
+  fit   : uniform sample of FIT_SAMPLE requests from FIT_MONTHS (simulator estimation)
+  val   : all requests of the VAL_DAYS, in request order
+  test  : all requests of the TEST_DAYS, in request order
+Request times are recorded in whole seconds; requests recorded in the same second receive independent uniform
+offsets within that second. Writes data/processed/{fit.parquet, cache/<split>_{t_ns,fare,X}.npy, summary.json}.
+
+    python build_data.py
 """
+import json
 import numpy as np
 import pandas as pd
 import geopandas as gpd
@@ -34,30 +37,23 @@ def weather_table():
     out = pd.DataFrame({"date": w.date.dt.normalize()})
     out["had_rain"] = (w.rain_sum > 0).astype(np.float32)
     out["had_snow_fall"] = (w.snowfall_sum > 0).astype(np.float32)
-    # temperatures in the file are in degrees Fahrenheit
-    out["is_extreme_temp"] = ((w.temperature_2m_max > 90) | (w.temperature_2m_min < 32)).astype(np.float32)
-    out["is_long_sunshine"] = (w.sunshine_duration >= 0.5 * w.daylight_duration).astype(np.float32)
+    out["is_extreme_temp"] = ((w.temperature_2m_max > 90) | (w.temperature_2m_min < 32)).astype(np.float32)  # deg F
+    out["is_long_daylight"] = (w.daylight_duration >= 12 * 3600).astype(np.float32)
     return out.set_index("date")
 
 
 def load_month(month, Z, W):
-    """Cleaned trips of one calendar month: DataFrame with time, fare and FEATURES."""
-    parts = []
-    for color, pre in (("yellow", "tpep"), ("green", "lpep")):
-        f = C.RAW / f"{color}_tripdata_{month}.parquet"
-        if not f.exists():
-            continue
-        cols = [f"{pre}_pickup_datetime", "passenger_count", "trip_distance", "RatecodeID",
-                "PULocationID", "DOLocationID", "fare_amount"]
-        d = pd.read_parquet(f, columns=cols).rename(columns={f"{pre}_pickup_datetime": "time"})
-        parts.append(d)
-    d = pd.concat(parts, ignore_index=True)
+    """Cleaned requests of one calendar month: DataFrame with time, fare and FEATURES."""
+    cols = ["hvfhs_license_num", "request_datetime", "pickup_datetime", "PULocationID", "DOLocationID",
+            "trip_miles", "base_passenger_fare", "shared_request_flag"]
+    d = pd.read_parquet(C.RAW / f"fhvhv_tripdata_{month}.parquet", columns=cols).rename(columns={"request_datetime": "time"})
+    n_raw = len(d)
     lo = pd.Timestamp(month + "-01"); hi = lo + pd.offsets.MonthBegin(1)
     pu = d.PULocationID.to_numpy(); do = d.DOLocationID.to_numpy()
-    ok = ((d.time >= lo) & (d.time < hi) & (d.RatecodeID == 1)
-          & d.fare_amount.between(C.PRICE_LO, C.PRICE_HI)
-          & d.passenger_count.between(1, 6)
-          & d.trip_distance.between(C.DIST_LO, C.DIST_HI)
+    ok = (d.hvfhs_license_num.isin(C.LICENSES) & (d.shared_request_flag == "N")
+          & d.time.notna() & (d.time >= lo) & (d.time < hi) & (d.time <= d.pickup_datetime)
+          & d.base_passenger_fare.between(C.PRICE_LO, C.PRICE_HI)
+          & d.trip_miles.between(C.DIST_LO, C.DIST_HI)
           & (pu >= 1) & (pu <= 263) & (do >= 1) & (do <= 263)).to_numpy()
     ok &= Z["known"][np.clip(pu, 0, 265)] & Z["known"][np.clip(do, 0, 265)]
     d = d[ok]; pu = pu[ok]; do = do[ok]
@@ -67,8 +63,8 @@ def load_month(month, Z, W):
     wk = W.reindex(d.time.dt.normalize()).to_numpy(np.float32)
     assert not np.isnan(wk).any()
     F = {
-        "passenger_count": d.passenger_count.to_numpy(),
-        "distance_mi": d.trip_distance.to_numpy(),
+        "is_lyft": (d.hvfhs_license_num == "HV0005").to_numpy(),
+        "distance_mi": d.trip_miles.to_numpy(),
         "pickup_in_manhattan": Z["man"][pu], "dropoff_in_manhattan": Z["man"][do],
         "pickup_near_airport": pa, "dropoff_near_airport": da,
         "traffic_congestion": (hour >= 8) & (hour <= 18) & (dow <= 4),
@@ -77,51 +73,54 @@ def load_month(month, Z, W):
         "is_evening_commute": (hour >= 17) & (hour < 19) & pb & ~db & ~da,
         "is_biz_to_airport": pb & da, "is_airport_to_biz": pa & db,
         "had_rain": wk[:, 0], "had_snow_fall": wk[:, 1],
-        "is_extreme_temp": wk[:, 2], "is_long_sunshine": wk[:, 3],
+        "is_extreme_temp": wk[:, 2], "is_long_daylight": wk[:, 3],
         "is_weekend": dow >= 5, "is_night": (hour >= 22) | (hour < 5),
         "is_cross_borough": Z["boro"][pu] != Z["boro"][do],
     }
     out = pd.DataFrame({k: np.asarray(F[k], np.float32) for k in C.FEATURES})
-    out.insert(0, "fare", d.fare_amount.to_numpy(np.float32))
+    out.insert(0, "fare", d.base_passenger_fare.to_numpy(np.float32))
     out.insert(0, "time", d.time.to_numpy())
-    out["hour"] = hour.astype(np.int8); out["dow"] = dow.astype(np.int8)
-    return out
+    return out, n_raw
 
 
 def save_stream(df, name, rng):
-    """Order a stream by arrival time after spreading trips within their second."""
+    """Order a stream by request time after spreading requests within their second."""
     t = df.time.to_numpy("datetime64[ns]").astype(np.int64)
     t = t + rng.integers(0, 1_000_000_000, size=len(t))
     o = np.argsort(t, kind="stable")
-    C.PROC.mkdir(parents=True, exist_ok=True)
-    np.savez(C.PROC / f"{name}.npz", t_ns=t[o], fare=df.fare.to_numpy()[o],
-             X=df[C.FEATURES].to_numpy(np.float32)[o])
-    print(name, len(o), "arrivals")
+    cache = C.PROC / "cache"; cache.mkdir(parents=True, exist_ok=True)
+    np.save(cache / f"{name}_t_ns.npy", t[o])
+    np.save(cache / f"{name}_fare.npy", df.fare.to_numpy()[o])
+    np.save(cache / f"{name}_X.npy", df[C.FEATURES].to_numpy(np.float32)[o])
+    print(name, len(o), "requests", flush=True)
+
+
+def days(d, list_of_days):
+    keep = np.zeros(len(d), bool)
+    for day in list_of_days:
+        lo = pd.Timestamp(day); keep |= ((d.time >= lo) & (d.time < lo + pd.Timedelta(days=1))).to_numpy()
+    return d[keep]
 
 
 def main():
+    C.PROC.mkdir(parents=True, exist_ok=True)
     Z, W = zone_table(), weather_table()
     rng = np.random.default_rng(C.SEED_DATA)
-    raw_rows = {}
-    fit = []
-    n_clean = 0
-    months = {}
+    fit, summary = [], {}
     for m in C.FIT_MONTHS:
-        d = load_month(m, Z, W); months[m] = len(d); n_clean += len(d)
-        fit.append(d.assign(u=rng.random(len(d)).astype(np.float32)))
-        if m == "2014-11":
-            v = d[(d.time >= C.VAL_WINDOW[0]) & (d.time < C.VAL_WINDOW[1])]
-            save_stream(v, "val", rng)
-        print(m, len(d), flush=True)
-        # keep memory bounded: retain only a generous candidate set per month
-        fit[-1] = fit[-1][fit[-1].u < 2.0 * C.FIT_SAMPLE / 160e6].copy()
+        d, n_raw = load_month(m, Z, W); summary[m] = dict(raw=n_raw, clean=len(d))
+        u = rng.random(len(d)).astype(np.float32)
+        fit.append(d[u < 2.0 * C.FIT_SAMPLE / 200e6].assign(u=u[u < 2.0 * C.FIT_SAMPLE / 200e6]))
+        print(m, n_raw, len(d), flush=True)
     fit = pd.concat(fit, ignore_index=True)
     fit = fit.nsmallest(C.FIT_SAMPLE, "u").drop(columns="u").sort_values("time").reset_index(drop=True)
     fit.to_parquet(C.PROC / "fit.parquet")
-    print("fit sample", len(fit), "of", n_clean, "cleaned trips")
-    d = load_month("2014-12", Z, W)
-    save_stream(d, "test", rng)
-    pd.Series(months).to_csv(C.PROC / "clean_rows_by_month.csv")
+    print("fit sample", len(fit), "of", sum(v["clean"] for v in summary.values()), "cleaned requests", flush=True)
+    for split, month, dd in (("val", C.VAL_MONTH, C.VAL_DAYS), ("test", C.TEST_MONTH, C.TEST_DAYS)):
+        d, n_raw = load_month(month, Z, W); summary[month] = dict(raw=n_raw, clean=len(d))
+        save_stream(days(d, dd), split, rng)
+        print(month, n_raw, len(d), flush=True)
+    (C.PROC / "summary.json").write_text(json.dumps(summary, indent=2) + "\n")
 
 
 if __name__ == "__main__":

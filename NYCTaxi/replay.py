@@ -13,11 +13,11 @@ def index_AB(Z, theta):
     return theta[0] + Z @ theta[1:1 + d], Z @ theta[1 + d:]
 
 
-def prob(A, B, price, price_unit=10.0):
+def prob(A, B, price, price_unit=20.0):
     return expit(A + B * np.asarray(price) / price_unit)
 
 
-def best_price(A, B, price_unit=10.0, price_lo=2.5, price_hi=70.0):
+def best_price(A, B, price_unit=20.0, price_lo=5.0, price_hi=150.0):
     A, B = np.asarray(A), np.asarray(B)
     w = np.real(lambertw(np.exp(np.minimum(A - 1.0, 700.0))))
     with np.errstate(divide="ignore", invalid="ignore"):
@@ -57,7 +57,7 @@ def fifo_finish(start, secs):
 
 
 def _policy_prices(Z, thetas, est, price_unit, price_lo, price_hi):
-    p = np.full(len(est), np.clip(20.0, price_lo, price_hi))
+    p = np.full(len(est), np.clip(40.0, price_lo, price_hi))   # before the first estimate
     # Contiguous groups avoid materializing an arrivals-by-coefficients matrix.
     edges = np.r_[0, np.flatnonzero(np.diff(est)) + 1, len(est)]
     for a, b in zip(edges[:-1], edges[1:]):
@@ -68,7 +68,7 @@ def _policy_prices(Z, thetas, est, price_unit, price_lo, price_hi):
 
 
 def evaluate(Z, clock, fare, true_theta, explore_idx, explore_price, trig,
-             thetas, secs, price_unit=10.0, price_lo=2.5, price_hi=70.0):
+             thetas, secs, price_unit=20.0, price_lo=5.0, price_hi=150.0):
     """Return summary rows, cumulative curves, and update-level timing details.
 
     clock and secs are seconds. trig is 1-based, explore_idx is 0-based.

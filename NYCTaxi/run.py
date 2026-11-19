@@ -1,4 +1,4 @@
-"""Stationary NYC startup-delay experiment. See protocol.txt for the frozen protocol."""
+"""HVFHV case study (2026-11-17): data access, design matrix and simulator. Adapted from nyc_delay/run.py."""
 import os
 for key in ('OPENBLAS_NUM_THREADS','OMP_NUM_THREADS','MKL_NUM_THREADS','VECLIB_MAXIMUM_THREADS','NUMBA_NUM_THREADS'):
     os.environ[key] = '1'
@@ -16,10 +16,13 @@ from scipy.optimize import minimize
 import solvers
 
 ROOT = Path(__file__).resolve().parent
-SOURCE = ROOT / 'build'   # processed data written by build/build_data.py and build/make_cache.py
-DATA = ROOT / 'data'
+SOURCE = ROOT                                   # data/processed written by build/build_data.py
+DATA = ROOT / 'data' / 'sim'
+PRICE_UNIT, PRICE_LO, PRICE_HI = 20., 5., 150.
+EXPLORE_PRICES = [20., 30., 40., 50., 60.]
+WEATHER_CSV = ROOT / 'data' / 'weather' / 'daily_weather_2025_2026.csv'
 RESULTS = ROOT / 'results'
-NAMES = ['passenger_count','distance_mi','pickup_in_manhattan','dropoff_in_manhattan',
+NAMES = ['is_lyft','distance_mi','pickup_in_manhattan','dropoff_in_manhattan',
          'pickup_near_airport','dropoff_near_airport','traffic_congestion',
          'pickup_in_business_district','dropoff_in_business_district',
          'is_morning_commute','is_evening_commute','is_biz_to_airport','is_airport_to_biz',
@@ -30,11 +33,11 @@ DAY = 86_400_000_000_000
 
 
 def design(z, price):
-    return np.column_stack((np.ones(len(z)), z, z*(price/10)[:,None]))
+    return np.column_stack((np.ones(len(z)), z, z*(price/PRICE_UNIT)[:,None]))
 
 
 def daylight(t):
-    w = pd.read_csv(SOURCE.parent/'Simulator/daily_weather_data_2009_2015.csv')
+    w = pd.read_csv(WEATHER_CSV)
     key = pd.to_datetime(w.date).to_numpy('datetime64[D]').astype('int64')
     values = pd.Series((w.daylight_duration.to_numpy() >= 12*3600).astype(float), index=key)
     out = values.reindex(np.asarray(t,dtype=np.int64)//DAY).to_numpy()
@@ -74,22 +77,22 @@ def fit_logit(blocks):
 def prepare():
     DATA.mkdir(exist_ok=True); RESULTS.mkdir(exist_ok=True)
     df=pd.read_parquet(SOURCE/'data/processed/fit.parquet')
-    excluded=df.time.between('2014-11-17','2014-11-24',inclusive='left')
-    df=df[~excluded].sample(2_000_000,random_state=2025).sort_values('time')
-    old=NAMES.copy();old[16]='is_long_sunshine'
+    excluded=np.zeros(len(df),bool)               # fit.parquet holds the training months only
+    df=df.sample(2_000_000,random_state=2025).sort_values('time')
+    old=NAMES.copy()
     x=df[old].to_numpy(float); x[:,16]=daylight(df.time.to_numpy('datetime64[ns]').astype('int64'))
     scale=np.ones(20);scale[:2]=x[:,:2].std(axis=0)
     np.save(DATA/'scale.npy',scale);z=x/scale;fare=df.fare.to_numpy(float)
     meta=dict(fit_trips=len(df),offers_per_trip=2,excluded_validation_rows=int(excluded.sum()),
               fit_min=str(df.time.min()),fit_max=str(df.time.max()),features=NAMES,scale=scale.tolist(),
-              sigma=.3,offer_distribution='log-uniform [0.4,4] times fare, clipped to [2.5,70]',
+              sigma=.3,offer_distribution='log-uniform [0.4,4] times fare, clipped to [5,150]',
               daylight_definition='daylight_duration >= 12 hours',seed=2025,scenarios={})
     for base in (1.4,1.6,1.8):
         name=f'wtp{round(base*10)}';rng=np.random.default_rng(2025);t0=time.perf_counter()
         wtp=fare*median_multiplier(x,base)*np.exp(.3*rng.standard_normal(len(x)))
         blocks=[]
         for _ in range(2):
-            price=np.clip(fare*np.exp(rng.uniform(np.log(.4),np.log(4),len(x))),2.5,70)
+            price=np.clip(fare*np.exp(rng.uniform(np.log(.4),np.log(4),len(x))),PRICE_LO,PRICE_HI)
             blocks.append((design(z,price).astype('float32'),(price<=wtp).astype(float)))
         theta,info=fit_logit(blocks)
         np.save(DATA/f'{name}.npy',theta)

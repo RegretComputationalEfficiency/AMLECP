@@ -4,23 +4,19 @@ __pycache__/
 *.py[cod]
 
 # --- Data that is not redistributed (see README.md) ---
-# NYC TLC trip records and the tables built from them (the code in build/ is kept;
-# the root .gitignore ignores every build/ folder)
+# the code in build/ is kept (the root .gitignore ignores every build/ folder)
 !build/
-build/data/
-# Open-Meteo daily weather and NYC TLC taxi zones
-Simulator/*
-!Simulator/README.md
+data/raw/
+data/processed/
+data/weather/
+data/zones/
 
-# --- Outputs of exploratory runs of run.py, single_update.py and online.py ---
+# --- Outputs of other runs ---
 results/*
 !results/formal/
-results/formal/*/selection_other.csv
-results/formal/*/selected_*.json
 formal_smoke.csv
 
-# --- Figures: only the panels of Figure 5 are kept (formal_report.py draws all scenarios) ---
+# --- Figures: only the panels of Figure 5 are kept ---
 figures/*
-!figures/formal_pressure_wtp16_1.pdf
-!figures/formal_pressure_wtp16_2.pdf
-!figures/formal_pressure_wtp16_3.pdf
+!figures/fig_taxi_delay_a.pdf
+!figures/fig_taxi_delay_b.pdf

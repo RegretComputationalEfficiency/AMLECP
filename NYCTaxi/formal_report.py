@@ -1,8 +1,8 @@
-"""Tables and figure of the formal Case Study II experiment. Reads formal.csv.
+"""Tables and figure of the HVFHV case study (2026-11-17). Reads formal.csv.
 
 Revenues are percent of the oracle revenue of the same window, losses are percentage
 points (revenue with instantaneous updates minus revenue with the measured update
-times). Means and standard errors are over the runs (four December weeks x three seeds).
+times). Means and standard errors are over the runs (four September 2026 Mondays x three seeds).
 """
 import json
 import sys
@@ -48,7 +48,7 @@ def crossing(rate, loss, level):
                         * (np.log(rate[i]) - np.log(rate[i - 1]))))
 
 
-def validation(scenario, sel, say, seeds=tuple(range(1, 11))):
+def validation(scenario, sel, say, seeds=(1, 2, 3)):
     """Two-step selection on the validation week: regret (% of oracle) of APGD, then the paired
     comparison of the selected APGD and ILQX settings over the same seeds."""
     t = pd.read_csv(ROOT / 'results/formal' / scenario / 'selection.csv')
@@ -59,24 +59,24 @@ def validation(scenario, sel, say, seeds=tuple(range(1, 11))):
     if 'etas' in sel and 'epss' in sel:                      # the grid of the selection being reported
         a = a.loc[[v for v in a.index if np.isclose(sel['etas'], v).any()],
                   [v for v in a.columns if np.isclose(sel['epss'], v).any()]]
-    say(f'\n0. Validation week ({len(seeds)} seeds, mean regret in % of the oracle revenue)')
+    say(f'\n〇、验证周选参（2026-09-07 周一 × 三颗种子 = {len(seeds)} 次，平均遗憾占 oracle 的 %）')
     say('  η̊ \\ ε̊   ' + ''.join(f'{e:>9g}' for e in a.columns))
     for eta, row in a.iterrows():
         mark = f' ← ε̊={sel["eps"]:g}' if np.isclose(eta, sel['eta']) else ''
         say(f'  {eta:<9g}' + ''.join('        -' if np.isnan(v) else f'{v:9.3f}' for v in row) + mark)
     if 'rule' in sel:
-        say(f'  Joint selection: (η̊, ε̊)=({sel["eta"]:g}, {sel["eps"]:g}) has the smallest mean regret, '
-            f'{"inside the grid" if sel["interior"] else "on the grid edge"}.')
+        say(f'  联合选参：全部格点中平均遗憾最小的 (η̊, ε̊)=({sel["eta"]:g}, {sel["eps"]:g})，'
+            f'{"在网格内部" if sel["interior"] else "在网格边界"}。')
     else:
-        say(f'  Step 1: η̊={sel["eta"]:g} has the smallest regret at ε̊={a.columns.min():g}. '
-            f'Step 2: ε̊={sel["eps"]:g} is the largest tolerance within 1.01 times the smallest regret of that row.')
+        say(f'  第一步：ε̊={a.columns.min():g} 下遗憾最小的 η̊={sel["eta"]:g}；'
+            f'第二步：该行遗憾不超过最小值 1.01 倍的最大 ε̊={sel["eps"]:g}。')
     pick = t[(t.family == 'apgd') & np.isclose(t.reg, sel['eta']) & np.isclose(t.eps0, sel['eps'])].set_index('seed').regret
     ilqx = t[(t.family == 'ilqx') & np.isclose(t.reg, sel['lam'])].set_index('seed').regret
     both = pick.index.intersection(ilqx.index)
     if len(both) > 1:
         m, se = stat(ilqx[both] - pick[both])
-        say(f'  Selected AMLE-PGD regret {pick[both].mean():.3f}, ILQX (λ̊={sel["lam"]:g}) {ilqx[both].mean():.3f}, '
-            f'revenue of PGD minus ILQX (paired, {len(both)} seeds) {m:+.3f} ± {se:.3f}')
+        say(f'  选出的 AMLE-PGD 遗憾 {pick[both].mean():.3f}，ILQX（λ̊={sel["lam"]:g}）{ilqx[both].mean():.3f}，'
+            f'PGD 收益 − ILQX 收益（配对，{len(both)} 颗种子）：{m:+.3f} ± {se:.3f}')
 
 
 def report(scenario):
@@ -86,74 +86,74 @@ def report(scenario):
     a = d[d.window == 'all']; out = []; say = out.append
     policies = ['AMLE-PGD', 'AMLE-PGD tight', 'AMLE-MOSEK', 'ILQX']
     rate = a.groupby('level').rate.mean()[LEVELS]
-    say(f'Scenario {scenario}: four December weeks x three seeds, the first 200,000 requests of each week.')
-    say(f'Selected on the validation week: η̊={sel["eta"]:g}, ε̊={sel["eps"]:g} (tighter tolerance {sel["tight"]:g}), λ̊={sel["lam"]:g}, '
-        f'{"all inside their grids" if sel["interior"] else "some on a grid edge"}.')
-    say(f'Runs {every.run.nunique()}, of which {len(dirty)} have a peak machine load of {BUSY:g} or more and are left out of the delay measures. '
-        f'Updates of AMLE-MOSEK not certified optimal and re-solved by AMLE-PGD at high precision: {int(every[every.level == "native"].drop_duplicates(["run", "policy"]).repaired.sum())}.')
-    say(f'Recorded arrival rate {rate["native"]:.2f} requests per second. TSP revenue {stat(every[(every.window == "all") & (every.level == "native")].drop_duplicates("run").tsp)[0]:.2f}.')
+    say(f'HVFHV 实验 {scenario}（κ=729）：2026 年 9 月后三个周一 × 三颗种子，每次前 200,000 个请求。')
+    say(f'验证周选出 η̊={sel["eta"]:g}，ε̊={sel["eps"]:g}（较紧一档 {sel["tight"]:g}），λ̊={sel["lam"]:g}，'
+        f'{"均在网格内部" if sel["interior"] else "有入选值在网格边界"}。')
+    say(f'运行数 {every.run.nunique()}，其中计时受干扰（峰值负载 ≥ {BUSY:g}）而不计入延迟指标的 {len(dirty)} 次。'
+        f'MOSEK 未认证而改用 APGD 高精度重解的更新共 {int(every[every.level == "native"].drop_duplicates(["run", "policy"]).repaired.sum())} 次。')
+    say(f'原始到达率 {rate["native"]:.2f} 请求/秒。历史报价（base_passenger_fare）收益 {stat(every[(every.window == "all") & (every.level == "native")].drop_duplicates("run").tsp)[0]:.2f}。')
     validation(scenario, sel, say)
 
-    say('\n1. Revenue with updates available at once (% of oracle), lift over TSP and total update time')
+    say('\n一、即时收益（占 oracle，%）、相对 TSP 的提升与全程更新时间')
     base = every[(every.window == 'all') & (every.level == 'native')]
     for p in policies:
         g = base[base.policy == p]; m, se = stat(g.instant); lift = stat(100 * (g.instant / g.tsp - 1))
         t = stat(a[(a.policy == p) & (a.level == 'native')].seconds)
-        say(f'  {p:<15} {m:6.2f} ± {se:.2f}   vs TSP +{lift[0]:.1f}% ± {lift[1]:.1f}   update time {t[0]:7.1f} ± {t[1]:.1f} s')
+        say(f'  {p:<15} {m:6.2f} ± {se:.2f}   较 TSP +{lift[0]:.1f}% ± {lift[1]:.1f}   更新时间 {t[0]:7.1f} ± {t[1]:.1f} 秒')
     pair = base.pivot_table(index='run', columns='policy', values='instant')
     for other in ('AMLE-MOSEK', 'ILQX'):
         m, se = stat(pair['AMLE-PGD'] - pair[other])
-        say(f'  AMLE-PGD - {other} (paired): {m:+.3f} ± {se:.3f}')
+        say(f'  AMLE-PGD − {other}（配对）：{m:+.3f} ± {se:.3f}')
 
-    for window, title in (('all', 'all requests'), ('first20', 'first 20%'), ('first5', 'first 5%')):
+    for window, title in (('all', '全部请求'), ('first20', '前 20%'), ('first5', '前 5%')):
         w = d[d.window == window]
-        say(f'\n2. Revenue lost to delay, newest finished estimate (points, {title}, mean ± s.e.)')
-        say('  requests/s     ' + ''.join(f'{("recorded" if l == "native" else l):>12}' for l in LEVELS))
+        say(f'\n二、延迟造成的收益损失（百分点，{title}，均值 ± 标准误）')
+        say('  请求/秒        ' + ''.join(f'{("原始" if l == "native" else l):>12}' for l in LEVELS))
         for p in policies:
             g = w[w.policy == p].pivot_table(index='run', columns='level', values='loss')[LEVELS]
             say(f'  {p:<15}' + ''.join(f'{g[l].mean():7.2f}±{g[l].std(ddof=1) / np.sqrt(len(g)):.2f}' for l in LEVELS))
             cross = [crossing(rate.values, g.mean().values, v) for v in (.1, .5, 1.)]
-            say('  ' + ' ' * 15 + 'requests/s at which the loss reaches 0.1 / 0.5 / 1 point: ' +
-                ' / '.join('not reached' if c is None else f'{c:,.0f}' for c in cross))
+            say('  ' + ' ' * 15 + '损失达到 0.1 / 0.5 / 1 个百分点的请求率：' +
+                ' / '.join('未达到' if c is None else f'{c:,.0f}' for c in cross))
 
-    say('\n3. All requests: timely updates (%), exploration data missing from the estimate in use (%), snapshots solved (%)')
-    for column, text in (('timely', 'timely'), ('behind', 'missing'), ('solved', 'solved')):
-        say(f'  {text:<8}' + ''.join(f'{("recorded" if l == "native" else l):>9}' for l in LEVELS))
+    say('\n三、及时率（%）、所用估计缺少的探索样本占比（%）、实际求解的快照占比（%）')
+    for column, text in (('timely', '及时率'), ('behind', '缺少样本'), ('solved', '求解快照')):
+        say(f'  {text}  ' + ''.join(f'{("原始" if l == "native" else l):>9}' for l in LEVELS))
         for p in policies:
             g = a[a.policy == p].groupby('level')[column].mean()[LEVELS]
             say(f'  {p:<15}' + ''.join(f'{100 * v:9.1f}' for v in g))
 
-    say('\n4. By week, all requests: revenue with updates at once / timely updates at the recorded rate / loss at 10,000 requests/s')
+    say('\n四、按周（全部请求）：即时收益；原始到达率下的及时率；10,000 请求/秒下的损失')
     for day, g in a.groupby('day'):
         row = []
         for p in ('AMLE-PGD', 'AMLE-MOSEK', 'ILQX'):
             h = g[g.policy == p]
             row.append(f'{p} {h[h.level == "native"].instant.mean():.2f} / {100 * h[h.level == "native"].timely.mean():.1f}% / '
                        f'{h[h.level == "10000"].loss.mean():.2f}')
-        say(f'  {day}  ' + ' | '.join(row))
+        say(f'  {day}：' + '；'.join(row))
 
-    rules = [('deployed', 'Newest finished estimate (baseline)')]
+    rules = [('deployed', '用最新已完成估计（基准）')]
     if 'lock' in d:
-        rules.append(('lock', 'Epoch rule of Algorithm 1 (recorded fare until the estimate of the epoch is finished)'))
+        rules.append(('lock', '按 Algorithm 1（本周期估计未完成时按计价表车费）'))
     for column, title in rules:
         loss = 'loss' if column == 'deployed' else 'lock_loss'
-        say(f'\n5. {title}')
-        for window, text in (('first5', 'first 5%'), ('all', 'all requests')):
+        say(f'\n五、{title}')
+        for window, text in (('first5', '前 5%'), ('all', '全部请求')):
             w = d[d.window == window]
-            say(f'  {text}: revenue lost to delay (points)')
-            say('  requests/s     ' + ''.join(f'{("recorded" if l == "native" else l):>12}' for l in LEVELS))
+            say(f'  {text}：延迟损失（百分点）')
+            say('  请求/秒        ' + ''.join(f'{("原始" if l == "native" else l):>12}' for l in LEVELS))
             for p in ('AMLE-PGD', 'AMLE-MOSEK', 'ILQX'):
                 g = w[w.policy == p].pivot_table(index='run', columns='level', values=loss)[LEVELS]
                 say(f'  {p:<15}' + ''.join(f'{g[l].mean():7.2f}±{g[l].std(ddof=1) / np.sqrt(len(g)):.2f}' for l in LEVELS))
             pair = w.pivot_table(index=['run', 'level'], columns='policy', values=column)
-            say(f'  {text}: deployed revenue difference (points, paired)')
+            say(f'  {text}：部署收益差（百分点，配对）')
             for other in ('ILQX', 'AMLE-MOSEK'):
                 x = (pair['AMLE-PGD'] - pair[other]).unstack('level')[LEVELS]
                 say(f'  PGD − {other:<9}' + ''.join(f'{x[l].mean():+7.2f}±{x[l].std(ddof=1) / np.sqrt(len(x)):.2f}' for l in LEVELS))
     f5 = d[d.window == 'first5']
-    say('\n6. First 5% of requests: timely updates (%) and exploration data missing from the estimate in use (%)')
-    for column, text in (('timely', 'timely'), ('behind', 'missing')):
-        say(f'  {text:<8}' + ''.join(f'{("recorded" if l == "native" else l):>9}' for l in LEVELS))
+    say('\n六、前 5% 的及时率（%）与所用估计缺少的探索样本占比（%）')
+    for column, text in (('timely', '及时率'), ('behind', '缺少样本')):
+        say(f'  {text}  ' + ''.join(f'{("原始" if l == "native" else l):>9}' for l in LEVELS))
         for p in ('AMLE-PGD', 'AMLE-MOSEK', 'ILQX'):
             g = f5[f5.policy == p].groupby('level')[column].mean()[LEVELS]
             say(f'  {p:<15}' + ''.join(f'{100 * v:9.1f}' for v in g))
