@@ -9,7 +9,7 @@ ILQX, SPO+, AdaGrad-style updates) but differ in the data environment:
 
 | Subproject | Folder | What it covers |
 | --- | --- | --- |
-| **Synthetic benchmarks** | [`Synthetic/R2_rerun/`](Synthetic/R2_rerun/) | Linear demand: Section 5.1 (Table 2, Figure 4) across SNR levels, the time of the exact solver (Figure 2), and the sensitivity to `q` with dense and sparse parameters (Figure EC.1, Appendix B). |
+| **Synthetic benchmarks** | [`Synthetic/R2_rerun/`](Synthetic/R2_rerun/) | Linear demand: Section 5.1 (Table 2, Figure 4) across SNR levels, the time of the exact solver (Figure 2), the sparse experiment (Table 3), and the sensitivity to `q` (Figure EC.1). |
 | **NYC ride-hailing (real data)** | [`NYCTaxi/`](NYCTaxi/) | Section 5.2 (Table 4, Figure 5): willingness-to-pay simulator fitted to NYC TLC ride-hailing (HVFHV) trips, policies estimating 729 parameters, selection on Monday 2026-09-07, timed tests on three September 2026 Mondays, revenue lost to delay under Algorithm 1. |
 
 The code of the first-round version (before the second-round revision) is kept at the tag
