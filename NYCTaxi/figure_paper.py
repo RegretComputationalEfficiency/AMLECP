@@ -2,7 +2,7 @@
 
 (a) revenue lost to delay, (b) revenue with delay, both against the request rate, under the rule of
 Algorithm 1 (estimate fixed at the first exploitation request of an epoch, column 'freeze').
-Top axis: request rate. Bottom axis: the same scenario as a solver slower by rate / recorded rate.
+Top axis: request rate. Bottom axis: the equivalent factor by which every update time is multiplied at the recorded rate (rate / recorded rate).
     python figure_paper.py OUTDIR
 """
 import sys
@@ -32,7 +32,7 @@ def data():
 
 def axes(ax, native):
     ax.set_xscale('log'); ax.set_xticks(L); ax.set_xticklabels([f'{v / native:.0f}' for v in L]); ax.minorticks_off()
-    ax.set_xlabel('solver slowdown at the recorded rate'); ax.grid(axis='y', color='#e6e5e0', lw=.6)
+    ax.set_xlabel('update time multiplier at the recorded rate'); ax.grid(axis='y', color='#e6e5e0', lw=.6)
     top = ax.secondary_xaxis('top'); top.set_xticks(L); top.set_xticklabels([f'{v:,}' for v in L])
     top.minorticks_off(); top.set_xlabel('requests per second', fontsize=8)
 

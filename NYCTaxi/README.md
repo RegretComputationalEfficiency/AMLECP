@@ -46,7 +46,7 @@ The code of the first-round version is kept at the tag
     estimate if that is finished, and otherwise the newest finished estimate. It prices the whole epoch.
   - Before the first estimate, the price is 40 USD.
   - The request rate is varied by dividing the arrival times by a constant, while the solve times stay as measured.
-    This is the same as a solver slower by that constant at the recorded rate of 5.1 requests per second.
+    This is equivalent to multiplying every update time by that constant at the recorded rate of 5.1 requests per second.
 
 ## Where the paper's numbers come from
 
