@@ -43,16 +43,19 @@ The code of the first-round version is kept at the tag
   update is timed.
 - **Deployment.** One worker computes the updates.
   - Under Algorithm 1, the estimate of an epoch is fixed at its first exploitation request. It is the epoch's own
-    estimate if that is finished, and otherwise the newest finished estimate. It prices the whole epoch.
+    estimate if that is finished, and otherwise the most recent finished estimate, usually that of the previous epoch.
+    It prices the whole epoch.
   - Before the first estimate, the price is 40 USD.
-  - The request rate is varied by dividing the arrival times by a constant, while the solve times stay as measured.
-    This is equivalent to multiplying every update time by that constant at the recorded rate of 5.1 requests per second.
+  - Longer updates are studied by multiplying every update time by a constant $f$ at the recorded arrival times
+    (5.1 requests per second on average). This is equivalent to keeping the measured update times and raising the
+    request rate $f$ times, which is how the code computes it, by dividing all arrival times by $f$. Each update uses
+    the same observations in both forms. Figure 5 shows $f$ on the bottom axis and the request rate on the top axis.
 
 ## Where the paper's numbers come from
 
 | Paper | File |
 |---|---|
-| Table 4 and the results of Section 5.2 | `formal_report.txt`, computed from `formal.csv` |
+| Table 4 and the results of Section 5.2 | `formal.csv` (loss to delay from the `freeze` column) and `formal_report.txt` |
 | Figure 5(a), (b) | `figures/fig_taxi_delay_a.pdf`, `figures/fig_taxi_delay_b.pdf` (`figure_paper.py`) |
 | Selection on the validation Monday | `results/formal/wtp16/selection.csv`, `selected.json` |
 | Simulator parameters | `data/sim/wtp16.npy`, `data/sim/scale.npy`, `data/sim/simulator.json` |
