@@ -1,6 +1,6 @@
 """Formal HVFHV case study with kappa = 729 (2026-11-17), copied from ../nyc_hvfhv_k729/formal.py.
 
-Schedules by method: AMLE-PGD and AMLE-MOSEK use the schedule of Algorithm 1 (m0 = 410, blocks [k^2, k^2+27]).
+Schedules by method: AMLE-PGD and AMLE-MOSEK use the schedule of Algorithm 1 (m0 = 410, m_k = 27 = sqrt(kappa), blocks [k^2, k^2+26]).
 ILQX uses the schedule of Ban et al. (2025): block L = 1, 2, ... runs two price experiments at requests
 ceil(L^2/s) and ceil(L^2/s)+1 (1-based, coinciding requests counted once) and re-solves after the block,
 with s = 41 nonzero coefficients of the truth. APGD selection rows were copied from ../nyc_hvfhv_k729
@@ -37,7 +37,7 @@ from replay import schedule, index_AB, best_price, prob, _policy_prices
 
 SMOKE = bool(os.environ.get('FORMAL_SMOKE'))            # small end-to-end check of the pipeline
 T = 20_000 if SMOKE else 200_000
-M0, MK = 410, 28
+M0, MK = 410, 27
 S_BAN = 41                                                       # nonzero coefficients of the truth
 VAL_DAYS = ('2026-09-07',)                                       # one validation Monday (test-month cache)
 VAL = ('test', VAL_DAYS[0])

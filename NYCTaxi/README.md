@@ -20,7 +20,7 @@ The code of the first-round version is kept at the tag
   features. The standard normal features do not affect demand, in the base part or the price part. The policies
   therefore estimate $\kappa_\theta=729$ parameters, and $s=41$ of them are nonzero.
 - **Schedules.**
-  - AMLE-PGD and AMLE-MOSEK follow Algorithm 1 with $m_0=410$ and $m_k=28$, using the blocks $[k^2,k^2+27]$.
+  - AMLE-PGD and AMLE-MOSEK follow Algorithm 1 with $m_0=410$ and $m_k=\sqrt{\kappa_\theta}=27$, using the blocks $[k^2,k^2+26]$.
   - ILQX follows the schedule of Ban et al. (2025) with the true $s=41$. Its $L$th block runs two price
     experiments at request $\lceil L^2/s\rceil$ and the next one, and it re-solves after the block.
   - Exploration prices are drawn from $\{20,30,40,50,60\}$ USD.
@@ -79,7 +79,7 @@ all updates. `live/` holds AMLE-PGD re-solved with its true warm starts at the r
 | `replay.py`, `solvers.py` | Exploration schedule, pricing, and the AMLE-PGD, AMLE-MOSEK and Lasso solvers |
 | `single_update.py`, `online.py` | The update of each policy and the timeline of the single worker |
 | `formal.py` | `select wtp16`, `test wtp16` (timed runs) and `evaluate` (writes `formal.csv`) |
-| `mosek_raw.py` | Reruns the AMLE-MOSEK test runs with MOSEK's own solutions |
+| `mosek_raw.py` | Runs the AMLE-MOSEK test runs with MOSEK's own solutions |
 | `formal_report.py` | `formal_report.txt` from `formal.csv` |
 | `figure_paper.py` | Figure 5 from `formal.csv` |
 | `run_formal.sh` | The full pipeline |
@@ -104,8 +104,8 @@ You need Python 3 with numpy, scipy, pandas, pyarrow, numba, matplotlib, geopand
    cd build && python build_data.py && cd ..
    ```
 
-3. Run the pipeline. `formal.py test` runs AMLE-MOSEK with repairs of non-optimal solves first, and `mosek_raw.py`
-   replaces these runs with MOSEK's own solutions.
+3. Run the pipeline. `mosek_raw.py` runs the AMLE-MOSEK test runs with MOSEK's own solutions, and `formal.py test`
+   then runs AMLE-PGD and skips the saved AMLE-MOSEK runs.
 
    ```bash
    ./run_formal.sh

@@ -17,9 +17,10 @@ import numpy as np
 import formal as F
 import solvers
 import single_update as su
+from online import tag
 
 SCENARIO = 'wtp16'
-CFG = dict(family='mosek', reg=1.0, eps0=0.)
+CFG = dict(family='mosek', reg=json.loads((F.OUT / SCENARIO / 'selected.json').read_text())['eta'], eps0=0.)  # selected eta0
 OLD = F.OUT.parent / 'formal_mosek_repaired'
 
 
@@ -44,7 +45,7 @@ def main():
     solvers.warm_up(su.KAPPA)
     for split, day in F.TEST:
         for seed in F.SEEDS:
-            folder = F.OUT / SCENARIO / day / f'seed{seed}'; out = folder / 'mosek_reg1_eps0.npz'
+            folder = F.OUT / SCENARIO / day / f'seed{seed}'; out = folder / (tag(CFG) + '.npz')
             done = out.exists() and 'optimal' in np.load(out).files
             if done:
                 continue
