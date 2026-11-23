@@ -8,7 +8,7 @@
 (b) Case II: heavy100 design with d = 729 (kappa = 730), T = 50,000, m_0 = m_k = 27 = floor(sqrt(kappa)).
              AMLE-PGD with fixed q in {2, 4, 1 + log kappa} (dense eta scaling), AMLE-PGD with the exponent
              p_k = 1 + 1/log(kappa |I_k|) and the two-pass eta_k(W) of Appendix A.5, and ILQX (MOSEK).
-(c) Case II: the same with m_0 = m_k = 3 = ceil(sqrt(s)), s = 6.
+(c) Case II: the same with m_0 = s = 6 and m_k = 3 for k >= 1.
 Tolerances: m_k = 27 (s unknown) uses eps_k = eps0 sqrt(kappa |I_k|), m_k = 3 (s known) uses eps_k = eps0 sqrt(s |I_k|)
 (runs with param epsd = 2 and 1 of sparse_r2.py). Selection as in Section 5.1: the (eta0 or c_eta, eps0) with the
 minimum mean final regret over 10 trials, then on that eta0 (c_eta) the largest eps0 whose mean final regret is

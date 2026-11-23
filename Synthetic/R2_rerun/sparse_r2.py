@@ -6,7 +6,8 @@ configurable number of features d and horizon T:
     100 in the estimation problem, so the fitted price coefficient is 10), parameter dimension kappa = d + 1;
   * heavy-tailed features (l4_heavy_tail_sample with mean shift 0.3), prices on [0, 211.8]
     (501 decision prices, 11 exploration prices), SNR = 1 calibrated as in env_r2 (per d);
-  * Algorithm 1 schedule with m_0 = m_k = m, noise and exploration draws common to all methods.
+  * Algorithm 1 schedule with m_k = m for k >= 1 and m_0 = max(m, s): m_0 = s = 6 and m_k = 3 when s is known,
+    m_0 = m_k = 27 otherwise. Noise and exploration draws common to all methods.
 
 Methods (one refit at the end of each exploration block, as in run_r2.py):
   * dense : AMLE-PGD with a fixed q (parameter "q", default 4), p = q/(q - 1), eta_k = eta0 kappa^(1/q - 1/2)
@@ -102,12 +103,18 @@ def trial_draws(k: int, T: int, n_explore_prices: int) -> tuple[np.ndarray, np.n
     return rng.standard_normal(int(T)), rng.integers(0, n_explore_prices, size=int(T))
 
 
-def schedule(T: int, m: int) -> tuple[np.ndarray, np.ndarray]:
-    """Algorithm 1 with m_0 = m_k = m (same rule as env_r2.schedule)."""
+def schedule(T: int, m0: int, m: int) -> tuple[np.ndarray, np.ndarray]:
+    """Algorithm 1 with M_0 = [1, m0] and M_k = [k^2, k^2 + m - 1] for k >= 1 (same rule as env_r2.schedule).
+
+    The estimate is refit at the last period of each block, from all exploration data so far. With m0 = 6 and
+    m = 3, M_1 = [1, 3] and M_2 = [4, 6] cover M_0, so the exploration periods and refit times are those of
+    m0 = m = 3. The refit at period 3 is used only as the starting point of the refit at period 6, because
+    periods 1-6 are all exploration periods.
+    """
     is_explore = np.zeros(T, dtype=bool)
     refit_at = np.zeros(T, dtype=bool)
-    is_explore[:m] = True
-    ends = {m}
+    is_explore[:m0] = True
+    ends = {m0}
     k = 1
     while k * k <= T:
         start, end = k * k, min(k * k + m - 1, T)
@@ -135,7 +142,8 @@ def run_one(d: int, method: str, m: int, param: dict, k: int, T: int) -> dict:
     kappa = env.kappa
     sigma = env.sigma()
     z, eidx = trial_draws(k, T, env.explore_grid.size)
-    is_explore, refit_at = schedule(T, m)
+    m0 = initial_length(m)
+    is_explore, refit_at = schedule(T, m0, m)
     n_exp = int(is_explore.sum())
     A = np.empty((n_exp, kappa))
     yv = np.empty(n_exp)
@@ -227,12 +235,17 @@ def run_one(d: int, method: str, m: int, param: dict, k: int, T: int) -> dict:
         "fit_W": np.array(log["W"], dtype=float), "v_final": v_hat,
         "err_final": float(np.linalg.norm(v_hat - env.v_true)) if v_hat is not None else np.nan,
         "total_time": float(np.sum(log["time"])),
-        "meta": json.dumps({"d": d, "kappa": kappa, "method": method, "m": m, "param": param, "k": k, "T": T,
+        "meta": json.dumps({"d": d, "kappa": kappa, "method": method, "m0": m0, "m": m, "param": param, "k": k, "T": T,
                             "sigma": sigma, "W0": W0, "pgd_solver": S.PGD_SOLVER}),
     }
 
 
 S_NONZERO = 6   # nonzero entries of (theta0, price coefficient)
+
+
+def initial_length(m: int) -> int:
+    """m_0 = s = 6 for m_k = 3 (s known) and m_0 = m_k for m_k = 27 (s unknown)."""
+    return max(int(m), S_NONZERO)
 
 
 def param_str(param: dict) -> str:
@@ -269,7 +282,7 @@ def main() -> None:
     ap.add_argument("--tag", required=True)
     ap.add_argument("--grid-json", required=True, help='{"dense": [params], "sparse": [...], "lasso": [...]}')
     ap.add_argument("--methods", nargs="+", default=list(METHODS))
-    ap.add_argument("--m", nargs="+", type=int, default=None, help="default: floor(sqrt(kappa)) and 3")
+    ap.add_argument("--m", nargs="+", type=int, default=None, help="m_k for k >= 1, default: floor(sqrt(kappa)) and 3; m_0 = max(m_k, s)")
     ap.add_argument("--k", nargs="+", type=int, default=list(range(1, 11)))
     ap.add_argument("--workers", type=int, default=9)
     ap.add_argument("--root", default=os.path.join(HERE, "results"))
@@ -294,7 +307,8 @@ def main() -> None:
     for method in sorted(args.methods, key=lambda s: order[s]):
         for m, param, k in itertools.product(ms, grid.get(method, []), args.k):
             jobs.append((args.root, args.tag, args.d, method, m, param, k, args.T))
-    print("{} jobs, {} workers, m in {}".format(len(jobs), args.workers, ms), flush=True)
+    print("{} jobs, {} workers, (m_0, m_k) in {}".format(len(jobs), args.workers, [(initial_length(m), m) for m in ms]),
+          flush=True)
     t_start = time.time()
     ctx = mp.get_context("spawn")
     with ctx.Pool(args.workers, maxtasksperchild=4) as pool:
