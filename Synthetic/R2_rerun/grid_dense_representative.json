@@ -1,0 +1,5 @@
+{"by_snr": {
+  "low":  {"PGD": [{"eta": 15.8,  "eps": 20.0, "eps_q": Infinity}]},
+  "mid":  {"PGD": [{"eta": 1.58,  "eps": 5.0,  "eps_q": Infinity}]},
+  "high": {"PGD": [{"eta": 0.158, "eps": 3.0,  "eps_q": Infinity}]}
+}}

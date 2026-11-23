@@ -32,6 +32,7 @@ and CLARABEL 0.10, PyTorch 2.13 (SPO+), matplotlib 3.9.
 | `grid_qsens.json`, `plot_qsens_r2.py` | Sensitivity to q (Figure EC.1; `plot_qsens_r2.py` provides the curves of `plot_qsens_caseI_r2.py`): q in {2, 1 + log kappa} at mid SNR in the dense design (results/qsens_alg1; q = 4 is taken from results/dense_alg1); the parameter `q` of a configuration sets p = q/(q-1) and the dimension factors of eta_k and eps_k, while the exploration schedule of Section 5.1 is kept for every q |
 | `grid_qsens_tol.json` | AMLE-PGD for q = 2 and 1 + log kappa in Figure EC.1 (results/qsens_tol_alg1): every q uses the tolerance of Section 5.1, eps_k = eps0 sqrt(kappa \|I_k\|) as in eq. (7) (parameter `eps_q` = inf), with eps0 in {1, 2, 3, 5, 10, 20, 30, 50, 100, 300}, so that AMLE-PGD is compared at the same accuracy; q = 4 and AMLE-MOSEK are reused from results/dense_alg1 and results/qsens_alg1 |
 | `grid_dense_adagrad.json` | AdaGrad lr in {0.316, 3.16, 31.6, 100} for the dense design (lr = 10 was best at high SNR, the edge of the decade grid) |
+| `grid_dense_representative.json`, `figures/dense_alg1/summary_fixed_step.csv` | The representative AMLE-PGD configurations of Table 2, and the results of Algorithm 2 as stated (`R2_PGD=fixed`) at these configurations (endnote 5 of the paper) |
 | `queue_pgd.sh` | Run queue of the AMLE-PGD runs of the paper (results/dense_alg1, results/qsens_tol_alg1 and the AMLE-PGD methods of results/sparse_d729) |
 | `queue_qsens_alg1.sh` | Run queue of the q-sensitivity runs of Figure EC.1 (results/qsens_alg1, results/qsens_tol_alg1) |
 | `sparse_r2.py` | Sparse experiment of Section 5.1 (Table 3; theory in Appendix A.5): data of the `heavy100` design with d features, T = 50,000 and the Algorithm 1 schedule with m_k = m for k >= 1 and m_0 = max(m, s) (`--m` sets m); methods `dense` (AMLE-PGD with a fixed q, parameter `q`, default 4), `sparse` (AMLE-PGD with p_k = 1 + 1/log(kappa \|I_k\|) and the two-pass eta_k(W) = c_eta sqrt(\|I_k\| rho_k)/W of Appendix A.5) and `lasso` (ILQX solved by MOSEK); one job = (method, m, hyper-parameter, trial k) -> one `.npz` |
@@ -107,6 +108,7 @@ python3 run_r2.py --design dense --tag dense_alg1 --snr low mid high --methods A
 caffeinate -i bash queue_qsens_alg1.sh              # q-sensitivity runs of Figure EC.1
 python3 check_timing_r2.py --tag dense_alg1          # timing sanity check
 R2_DESIGN=dense python3 plot_r2.py --tag dense_alg1  # Table 2, Figure 4 and results for all hyperparameters (figures/dense_alg1)
+R2_PGD=fixed python3 run_r2.py --design dense --tag dense_alg1 --snr low mid high --methods PGD --grid-json grid_dense_representative.json --root results_fixed --workers 9   # endnote 5
 python3 plot_qsens_r2.py                             # summaries of Figure EC.1 (figures/qsens_alg1)
 python3 plot_qsens_caseI_r2.py                       # Figure EC.1 (figures/qsens_caseI)
 caffeinate -i bash queue_pgd.sh                      # AMLE-PGD runs of the paper (existing outputs are skipped)
@@ -120,3 +122,5 @@ caffeinate -i python3 mle_scaling_r2.py --threads 1  # Figure 2 (figures/mle_sca
 Jobs whose output exists are skipped, so an interrupted run can be resumed with the same command.
 Each `.npz` stores prices, demand, expected/realized revenue, oracle revenue, and per-update logs
 (sample size, time, PGD iterations, stop reason, certificate norm, first-order residual).
+
+`R2_PGD` selects the AMLE-PGD solver. The default `bt` is the implementation described in endnote 5 of the paper. It takes the gradient step at an extrapolated point and chooses the step size by backtracking. `R2_PGD=fixed` runs Algorithm 2 as stated, with the gradient step at the current iterate and the step size 1/L_k. The command marked endnote 5 reruns the representative configurations of Table 2 with it in `results_fixed/`, and `figures/dense_alg1/summary_fixed_step.csv` summarizes these runs. Their regret and iteration counts are reproduced exactly. Their optimization times, measured with nine parallel workers as in Table 2, are 78–95% below those of AMLE-MOSEK. Times depend on the machine and on the number of parallel workers.
