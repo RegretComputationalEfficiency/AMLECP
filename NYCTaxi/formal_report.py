@@ -3,6 +3,7 @@
 Revenues are percent of the oracle revenue of the same window, losses are percentage
 points (revenue with instantaneous updates minus revenue with the measured update
 times). Means and standard errors are over the runs (four September 2026 Mondays x three seeds).
+The gain over HPF is the ratio of the mean revenues minus one, as in Table 4 of the paper.
 """
 import json
 import sys
@@ -33,6 +34,12 @@ def read(scenario):
 
 def stat(x):
     return x.mean(), x.std(ddof=1) / np.sqrt(len(x))
+
+
+def ratio_of_means(x, y):
+    """100 (mean(x) / mean(y) - 1) and its delta-method standard error over the runs."""
+    r = x.mean() / y.mean()
+    return 100 * (r - 1), 100 * np.std(x.to_numpy() - r * y.to_numpy(), ddof=1) / np.sqrt(len(x)) / y.mean()
 
 
 def crossing(rate, loss, level):
@@ -94,12 +101,12 @@ def report(scenario):
     say(f'原始到达率 {rate["native"]:.2f} 请求/秒。历史报价（base_passenger_fare）收益 {stat(every[(every.window == "all") & (every.level == "native")].drop_duplicates("run").tsp)[0]:.2f}。')
     validation(scenario, sel, say)
 
-    say('\n一、即时收益（占 oracle，%）、相对 TSP 的提升与全程更新时间')
+    say('\n一、即时收益（占 oracle，%）、相对 HPF 的提升（平均收益之比）与全程更新时间')
     base = every[(every.window == 'all') & (every.level == 'native')]
     for p in policies:
-        g = base[base.policy == p]; m, se = stat(g.instant); lift = stat(100 * (g.instant / g.tsp - 1))
+        g = base[base.policy == p]; m, se = stat(g.instant); lift = ratio_of_means(g.instant, g.tsp)
         t = stat(a[(a.policy == p) & (a.level == 'native')].seconds)
-        say(f'  {p:<15} {m:6.2f} ± {se:.2f}   较 TSP +{lift[0]:.1f}% ± {lift[1]:.1f}   更新时间 {t[0]:7.1f} ± {t[1]:.1f} 秒')
+        say(f'  {p:<15} {m:6.2f} ± {se:.2f}   较 HPF {lift[0]:+.1f}% ± {lift[1]:.1f}   更新时间 {t[0]:7.1f} ± {t[1]:.1f} 秒')
     pair = base.pivot_table(index='run', columns='policy', values='instant')
     for other in ('AMLE-MOSEK', 'ILQX'):
         m, se = stat(pair['AMLE-PGD'] - pair[other])
