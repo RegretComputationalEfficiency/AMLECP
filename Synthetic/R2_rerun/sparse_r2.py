@@ -17,7 +17,7 @@ Methods (one refit at the end of each exploration block, as in run_r2.py):
             v^(0) (W is never taken below W0), the same eps_k as dense;
   * lasso : ILQX of Section 5.1 (Lasso solved exactly by MOSEK) with lambda_t = lambda0 t^(1/4)
             sqrt(log kappa + log t), t = current period. With m fixed, the tuned lambda0 absorbs the factor
-            sqrt(m), so this is the Lasso estimator of Ban et al. (2025) under the exploration schedule above.
+            sqrt(m), so this is the Lasso estimator of Ban et al. (2026) under the exploration schedule above.
 
 Each job (method, m, hyper-parameter, trial k) writes one .npz with per-period pseudo-regret inputs and the
 per-refit logs.  Existing outputs are skipped.

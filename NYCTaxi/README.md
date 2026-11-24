@@ -22,7 +22,7 @@ The code of the first-round version is kept at the tag
   therefore estimate $\kappa_\theta=729$ parameters, and $s=41$ of them are nonzero.
 - **Schedules.**
   - AMLE-PGD and AMLE-MOSEK follow Algorithm 1 with $m_0=410$ and $m_k=\sqrt{\kappa_\theta}=27$, using the blocks $[k^2,k^2+26]$.
-  - ILQX follows the schedule of Ban et al. (2025) with the true $s=41$. Its $L$th block runs two price
+  - ILQX follows the schedule of Ban et al. (2026) with the true $s=41$. Its $L$th block runs two price
     experiments at request $\lceil L^2/s\rceil$ and the next one, and it re-solves after the block.
   - Exploration prices are drawn from $\{20,30,40,50,60\}$ USD.
 - **Policies.**

@@ -1,7 +1,7 @@
 """Formal HVFHV case study with kappa = 729 (2026-11-17), copied from ../nyc_hvfhv_k729/formal.py.
 
 Schedules by method: AMLE-PGD and AMLE-MOSEK use the schedule of Algorithm 1 (m0 = 410, m_k = 27 = sqrt(kappa), blocks [k^2, k^2+26]).
-ILQX uses the schedule of Ban et al. (2025): block L = 1, 2, ... runs two price experiments at requests
+ILQX uses the schedule of Ban et al. (2026): block L = 1, 2, ... runs two price experiments at requests
 ceil(L^2/s) and ceil(L^2/s)+1 (1-based, coinciding requests counted once) and re-solves after the block,
 with s = 41 nonzero coefficients of the truth. APGD selection rows were copied from ../nyc_hvfhv_k729
 (same streams and code); its ILQX rows, on Algorithm 1's schedule, were not.
