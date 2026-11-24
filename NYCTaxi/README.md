@@ -15,7 +15,8 @@ The code of the first-round version is kept at the tag
     2026, and label them by this rule.
   - The logit model of Section 5.2 is fitted to these offers. It has 20 contextual features and 41 parameters, and
     it is the ground truth (`data/sim/wtp16.npy`).
-  - `run.py prepare` also fits the medians 1.4 and 1.8, which are not used in the paper.
+  - `run.py prepare` also fits the medians 1.4 and 1.8 (`data/sim/wtp14.npy`, `data/sim/wtp18.npy`) in the same way.
+    They are used in the robustness check below.
 - **Features.** Each request carries the 20 contextual features of Table EC.2 and 344 independent standard normal
   features. The standard normal features do not affect demand, in the base part or the price part. The policies
   therefore estimate $\kappa_\theta=729$ parameters, and $s=41$ of them are nonzero.
@@ -41,6 +42,9 @@ The code of the first-round version is kept at the tag
 - **Test.** The test uses the first 200,000 requests of Mondays, September 14, 21 and 28, 2026, with three seeds per
   day (9 runs per policy). The runs are made one after another on an idle machine with one thread, and every
   update is timed.
+- **Robustness.** For the medians 1.4 and 1.8, AMLE-PGD is selected again on the validation Monday by the same rule
+  and run on the 9 test runs above. Its revenue with updates available at once is compared with HPF. Both medians
+  select $\mathring\eta=1$ and $\mathring\varepsilon=0.001$. Only AMLE-PGD and HPF are run, and times are not used.
 - **Deployment.** One worker computes the updates.
   - Under Algorithm 1, the estimate of an epoch is fixed at its first exploitation request. It is the epoch's own
     estimate if that is finished, and otherwise the most recent finished estimate, usually that of the previous epoch.
@@ -58,6 +62,7 @@ The code of the first-round version is kept at the tag
 | Table 4 and the results of Section 5.2 | `formal.csv` (loss to delay from the `freeze` column) and `formal_report.txt` |
 | Figure 5(a), (b) | `figures/fig_taxi_delay_a.pdf`, `figures/fig_taxi_delay_b.pdf` (`figure_paper.py`) |
 | Selection on the validation Monday | `results/formal/wtp16/selection.csv`, `selected.json` |
+| Medians 1.4 and 1.8 in Section 5.2 | `robust_wtp_report.txt`, from `results/robust_wtp/<wtp14, wtp18>/` and the wtp16 rows of `formal.csv` |
 | Simulator parameters | `data/sim/wtp16.npy`, `data/sim/scale.npy`, `data/sim/simulator.json` |
 
 `formal.csv` has one row per policy, test day, seed, request rate (`level`) and window (`all`, `first20`, `first5`).
@@ -86,6 +91,7 @@ all updates. `live/` holds AMLE-PGD re-solved with its true warm starts at the r
 | `formal_report.py` | `formal_report.txt` from `formal.csv` |
 | `figure_paper.py` | Figure 5 from `formal.csv` |
 | `run_formal.sh` | The full pipeline |
+| `robust_wtp.py`, `run_robust_wtp.sh` | The robustness check for the medians 1.4 and 1.8 (`select`, `test`, `report`) |
 | `environment.json` | Python and package versions of the reported runs |
 
 ## Reproducing
@@ -121,3 +127,12 @@ You need Python 3 with numpy, scipy, pandas, pyarrow, numba, matplotlib, geopand
    ```
 
    Replaying the saved runs (`python formal.py evaluate`) also needs the request tables of step 2.
+
+4. The robustness check for the medians 1.4 and 1.8 also needs the request tables of step 2. It takes about
+   1.5 hours with four workers.
+
+   ```bash
+   ./run_robust_wtp.sh
+   ```
+
+   To recompute only its report from the saved results, run `python robust_wtp.py report`.

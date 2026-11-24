@@ -14,6 +14,7 @@ data/zones/
 # --- Outputs of other runs ---
 results/*
 !results/formal/
+!results/robust_wtp/
 formal_smoke.csv
 
 # --- Figures: only the panels of Figure 5 are kept ---

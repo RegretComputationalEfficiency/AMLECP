@@ -1,0 +1,8 @@
+Case Study II, robustness to the median WTP multiplier. Revenue with updates available at once,
+first 200,000 requests of the three test Mondays x three seeds, in % of the oracle revenue.
+Gain over HPF = mean AMLE-PGD revenue / mean HPF revenue - 1 (ratio of means, as in Table 4).
+
+ median        setting   eta0    eps0  runs     HPF  AMLE-PGD  gain vs HPF   min..max per run
+    1.4       selected      1   0.001     9   70.65     82.47       +16.7%    +11.2..+24.2%
+    1.6       selected      1   0.001     9   65.10     80.36       +23.4%    +16.4..+32.9%
+    1.8       selected      1   0.001     9   59.56     78.72       +32.2%    +24.7..+43.8%
